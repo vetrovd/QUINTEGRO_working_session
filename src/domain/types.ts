@@ -129,6 +129,8 @@ export interface Booking {
   startedAt?: IsoDateTime;
   handbackRequestedAt?: IsoDateTime;
   completedAt?: IsoDateTime;
+  /** Чем закрылась бронь: подтверждением семьи или молчанием (ADR 0001). */
+  closedBy?: "family" | "timeout";
   declineReason?: string;
 }
 
@@ -196,6 +198,9 @@ export type DomainEvent =
   /** Семья подтверждает закрытие — единственное событие, которое даёт ситтеру
    *  доступ к деньгам (ADR 0001). Авто-подтверждение по таймауту — тикет 10. */
   | { type: "HandbackConfirmed"; bookingId: BookingId }
+  /** Молчание семьи в течение окна ответа. Событие отправляет хранилище, когда
+   *  время дошло до дедлайна — само время в редьюсер не протекает. */
+  | { type: "HandbackAutoConfirmed"; bookingId: BookingId }
   | {
       type: "PayoutRequested";
       payoutId: PayoutId;

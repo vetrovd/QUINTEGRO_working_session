@@ -13,6 +13,32 @@ export const systemClock: Clock = {
   now: () => new Date().toISOString(),
 };
 
+export const HOUR_MS = 60 * 60 * 1000;
+
+export interface ShiftingClock extends Clock {
+  advance(hours: number): void;
+  reset(): void;
+  offsetMs(): number;
+}
+
+/**
+ * Часы прототипа: настоящее время плюс сдвиг, который двигает панель. Нужны,
+ * чтобы 48-часовое окно подтверждения можно было показать, а не рассказать.
+ */
+export function shiftingClock(base: Clock = systemClock, initialOffsetMs = 0): ShiftingClock {
+  let offset = initialOffsetMs;
+  return {
+    now: () => new Date(Date.parse(base.now()) + offset).toISOString(),
+    advance: (hours) => {
+      offset += hours * HOUR_MS;
+    },
+    reset: () => {
+      offset = 0;
+    },
+    offsetMs: () => offset,
+  };
+}
+
 /** Часы для тестов: время не двигается, пока его не сдвинут явно. */
 export function fixedClock(start: IsoDateTime): Clock & { advanceHours(hours: number): void } {
   let current = new Date(start).getTime();

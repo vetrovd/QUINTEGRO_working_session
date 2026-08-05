@@ -1,5 +1,6 @@
 import { today } from "./dates";
 import { earningOfVisit } from "./earnings";
+import { handbackTimeLeftMs } from "./handback";
 import { isReportEmpty } from "./reports";
 import type {
   Booking,
@@ -254,6 +255,23 @@ export function canConfirmHandback(state: DomainState, bookingId: BookingId): Gu
   if (booking.status === "completed") return deny("Бронь уже закрыта");
   if (booking.status !== "awaitingHandback") {
     return deny("Ситтер ещё не заявил сдачу работы");
+  }
+  return allow;
+}
+
+/**
+ * Молчание семьи закрывает бронь только после дедлайна. Подтверждение внутри
+ * окна выводит бронь из awaitingHandback, и таймаут уже не сработает.
+ */
+export function canAutoConfirmHandback(
+  state: DomainState,
+  bookingId: BookingId,
+  now: IsoDateTime,
+): Guard {
+  const confirmable = canConfirmHandback(state, bookingId);
+  if (!confirmable.allowed) return confirmable;
+  if (handbackTimeLeftMs(state.bookings[bookingId], now) > 0) {
+    return deny("Окно ответа семьи ещё не истекло");
   }
   return allow;
 }

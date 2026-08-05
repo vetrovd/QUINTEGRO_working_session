@@ -1,5 +1,6 @@
 import {
   canAcceptMeetGreet,
+  canAutoConfirmHandback,
   canCancelBooking,
   canCheckIn,
   canConfirmHandback,
@@ -284,6 +285,19 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         ...state.bookings[event.bookingId],
         status: "completed",
         completedAt: ctx.now,
+        closedBy: "family",
+      });
+    }
+
+    case "HandbackAutoConfirmed": {
+      const guard = canAutoConfirmHandback(state, event.bookingId, ctx.now);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      // Молчание в течение окна — то же закрытие, но видно, чем оно вызвано.
+      return commitBooking(state, event, ctx, {
+        ...state.bookings[event.bookingId],
+        status: "completed",
+        completedAt: ctx.now,
+        closedBy: "timeout",
       });
     }
   }

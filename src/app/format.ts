@@ -2,6 +2,7 @@ import { SLOT_TIMES, parseIsoDate } from "../domain/dates";
 import type {
   BookingStatus,
   CareTask,
+  DomainEvent,
   IsoDate,
   IsoDateTime,
   KeyHandoverMethod,
@@ -63,6 +64,41 @@ const ROLE_LABELS: Record<Role, string> = {
   family: "семьи",
   sitter: "ситтера",
 };
+
+/** Журнал прототипа: событие домена по-русски. */
+const EVENT_LABELS: Record<DomainEvent["type"], string> = {
+  BookingRequested: "Семья отправила запрос на бронь",
+  BookingAccepted: "Ситтер принял бронь",
+  BookingDeclined: "Ситтер отклонил бронь",
+  BookingCancelled: "Бронь отменена",
+  MeetGreetProposed: "Предложено время знакомства",
+  MeetGreetAccepted: "Время знакомства принято",
+  MeetGreetHappened: "Знакомство состоялось",
+  KeyHandoverProposed: "Предложена передача ключей",
+  KeyHandoverConfirmed: "Передача ключей подтверждена",
+  VisitCheckedIn: "Ситтер отметил приход",
+  VisitReportSaved: "Отчёт сохранён",
+  VisitReportSubmitted: "Отчёт сдан",
+  VisitReportRead: "Семья прочитала отчёт",
+  HandbackRequested: "Ситтер заявил сдачу работы",
+  HandbackConfirmed: "Семья подтвердила закрытие",
+  HandbackAutoConfirmed: "Закрытие по молчанию семьи",
+  PayoutRequested: "Ситтер вывел деньги",
+};
+
+export function eventLabel(event: DomainEvent): string {
+  return EVENT_LABELS[event.type];
+}
+
+/** Остаток окна: сутки и часы, ниже суток — часы и минуты. */
+export function formatDuration(ms: number): string {
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  const days = Math.floor(minutes / (24 * 60));
+  const hours = Math.floor((minutes % (24 * 60)) / 60);
+  if (days > 0) return `${days} д ${hours} ч`;
+  if (hours > 0) return `${hours} ч ${minutes % 60} мин`;
+  return `${minutes} мин`;
+}
 
 export function slotLabel(slot: SlotOfDay): string {
   return `${SLOT_LABELS[slot]}, ${SLOT_TIMES[slot]}`;

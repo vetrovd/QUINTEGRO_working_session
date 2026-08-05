@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { formatMoney } from "../domain/money";
 import type { Booking, DomainState } from "../domain/types";
+import { countDays } from "../domain/dates";
 import { Card } from "./ui";
-import { countDays, formatDateRange, slotsLabel, statusText, statusTone } from "./format";
+import { formatDateRange, slotsLabel, statusText, statusTone } from "./format";
 
 /** Общее представление брони для обеих ролей — расходятся только действия. */
 export function BookingCard({

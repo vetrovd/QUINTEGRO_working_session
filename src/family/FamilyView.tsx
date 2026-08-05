@@ -2,8 +2,10 @@ import { canCancelBooking } from "../domain/guards";
 import { SEED_FAMILY_ID } from "../domain/seed";
 import { useStore } from "../store/StoreProvider";
 import { BookingCard } from "../app/BookingCard";
+import { VisitProgress } from "../app/VisitProgress";
 import { EmptyState, GuardedButton, SectionTitle } from "../app/ui";
-import { BookingRequestForm } from "./BookingRequestForm";
+import { BookingSteps } from "../booking/BookingSteps";
+import { BookingCalendar } from "./BookingCalendar";
 
 export function FamilyView() {
   const { state, dispatch } = useStore();
@@ -13,12 +15,12 @@ export function FamilyView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <BookingRequestForm />
+      <BookingCalendar />
 
       <section>
         <SectionTitle hint="Статус виден сразу, как ситтер ответит">Мои брони</SectionTitle>
         {bookings.length === 0 ? (
-          <EmptyState>Броней пока нет. Отправьте запрос ситтеру выше.</EmptyState>
+          <EmptyState>Броней пока нет. Выберите период в календаре выше.</EmptyState>
         ) : (
           <div className="flex flex-col gap-4">
             {bookings.map((booking) => (
@@ -35,7 +37,10 @@ export function FamilyView() {
                     Отменить бронь
                   </GuardedButton>
                 }
-              />
+              >
+                <VisitProgress state={state} bookingId={booking.id} />
+                <BookingSteps booking={booking} role="family" />
+              </BookingCard>
             ))}
           </div>
         )}

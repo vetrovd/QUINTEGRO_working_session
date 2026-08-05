@@ -1,10 +1,12 @@
 export type IsoDateTime = string;
+/** Календарная дата в формате YYYY-MM-DD, всегда локальная. */
 export type IsoDate = string;
 
 export type FamilyId = string;
 export type SitterId = string;
 export type PetId = string;
 export type BookingId = string;
+export type VisitId = string;
 
 export type Role = "family" | "sitter";
 
@@ -31,11 +33,51 @@ export interface Pet {
 }
 
 /**
- * Статусы до старта опеки. Остальной жизненный цикл Booking'а
- * (readyToStart, inProgress, awaitingHandback, completed, ...) добавляется
- * следующими тикетами.
+ * Статусы до и во время опеки. Закрытие (awaitingHandback, completed,
+ * disputed, terminatedEarly) добавляют тикеты 08, 11 и 12.
  */
-export type BookingStatus = "requested" | "confirmed" | "declined" | "cancelled";
+export type BookingStatus =
+  | "requested"
+  | "confirmed"
+  | "readyToStart"
+  | "inProgress"
+  | "declined"
+  | "cancelled";
+
+export type MeetGreetStatus = "none" | "proposed" | "accepted" | "happened" | "skipped";
+
+/** Знакомство одноразовое на пару Family↔Sitter: повторная бронь его пропускает. */
+export interface MeetGreet {
+  status: MeetGreetStatus;
+  proposedBy?: Role;
+  meetingAt?: IsoDateTime;
+}
+
+export type KeyHandoverDirection = "handover" | "return";
+export type KeyHandoverMethod = "inPerson" | "lockbox" | "doorCode";
+export type KeyHandoverStatus = "pending" | "proposed" | "done";
+
+/** Передача доступа в дом. Состоялась только при подтверждении обеими сторонами. */
+export interface KeyHandover {
+  status: KeyHandoverStatus;
+  method?: KeyHandoverMethod;
+  meetingAt?: IsoDateTime;
+  details?: string;
+  proposedBy?: Role;
+  confirmedByFamily: boolean;
+  confirmedBySitter: boolean;
+}
+
+export type VisitStatus = "scheduled" | "checkedIn" | "cancelled";
+
+export interface Visit {
+  id: VisitId;
+  bookingId: BookingId;
+  date: IsoDate;
+  slot: SlotOfDay;
+  status: VisitStatus;
+  checkedInAt?: IsoDateTime;
+}
 
 export interface Booking {
   id: BookingId;
@@ -47,9 +89,12 @@ export interface Booking {
   slots: SlotOfDay[];
   ratePerVisitMinor: number;
   status: BookingStatus;
+  meetGreet: MeetGreet;
+  keys: Record<KeyHandoverDirection, KeyHandover>;
   requestedAt: IsoDateTime;
   respondedAt?: IsoDateTime;
   cancelledAt?: IsoDateTime;
+  startedAt?: IsoDateTime;
   declineReason?: string;
 }
 
@@ -67,7 +112,26 @@ export type DomainEvent =
     }
   | { type: "BookingAccepted"; bookingId: BookingId }
   | { type: "BookingDeclined"; bookingId: BookingId; reason?: string }
-  | { type: "BookingCancelled"; bookingId: BookingId };
+  | { type: "BookingCancelled"; bookingId: BookingId }
+  | { type: "MeetGreetProposed"; bookingId: BookingId; by: Role; meetingAt: IsoDateTime }
+  | { type: "MeetGreetAccepted"; bookingId: BookingId; by: Role }
+  | { type: "MeetGreetHappened"; bookingId: BookingId }
+  | {
+      type: "KeyHandoverProposed";
+      bookingId: BookingId;
+      direction: KeyHandoverDirection;
+      by: Role;
+      method: KeyHandoverMethod;
+      meetingAt: IsoDateTime;
+      details?: string;
+    }
+  | {
+      type: "KeyHandoverConfirmed";
+      bookingId: BookingId;
+      direction: KeyHandoverDirection;
+      by: Role;
+    }
+  | { type: "VisitCheckedIn"; visitId: VisitId };
 
 /**
  * Запись журнала. Отклонённый переход тоже попадает сюда — молча ничего не
@@ -84,5 +148,6 @@ export interface DomainState {
   sitters: Record<SitterId, Sitter>;
   pets: Record<PetId, Pet>;
   bookings: Record<BookingId, Booking>;
+  visits: Record<VisitId, Visit>;
   journal: JournalEntry[];
 }

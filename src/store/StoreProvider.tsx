@@ -3,10 +3,20 @@ import type { ReactNode } from "react";
 import { systemClock } from "../domain/clock";
 import { reduce } from "../domain/reducer";
 import { createSeedState } from "../domain/seed";
-import type { DomainEvent, DomainState, Role } from "../domain/types";
+import type { DomainEvent, DomainState, IsoDateTime, Role } from "../domain/types";
 
 const STORAGE_KEY = "pet-sitting-prototype";
-const STORAGE_VERSION = 1;
+/** Поднимать при любом изменении формы DomainState — иначе старое состояние
+ *  загрузится как валидное и упадёт на отсутствующей коллекции. */
+const STORAGE_VERSION = 2;
+const REQUIRED_COLLECTIONS = [
+  "families",
+  "sitters",
+  "pets",
+  "bookings",
+  "visits",
+  "journal",
+] as const;
 
 interface StoreValue {
   state: DomainState;
@@ -14,6 +24,8 @@ interface StoreValue {
   reset: () => void;
   role: Role;
   setRole: (role: Role) => void;
+  /** Текущее время из часов домена. В тикете 10 их заменят виртуальные. */
+  now: IsoDateTime;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -38,9 +50,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     rawDispatch({ kind: "reset" });
   }, []);
 
+  const now = systemClock.now();
   const value = useMemo(
-    () => ({ state, dispatch, reset, role, setRole }),
-    [state, dispatch, reset, role],
+    () => ({ state, dispatch, reset, role, setRole, now }),
+    [state, dispatch, reset, role, now],
   );
 
   return <StoreContext value={value}>{children}</StoreContext>;
@@ -65,6 +78,8 @@ function loadState(): DomainState {
     if (!raw) return createSeedState();
     const parsed = JSON.parse(raw) as { version?: number; state?: DomainState };
     if (parsed.version !== STORAGE_VERSION || !parsed.state) return createSeedState();
+    // Страховка от забытого поднятия версии: не хватает коллекции — начинаем заново.
+    if (!REQUIRED_COLLECTIONS.every((key) => key in parsed.state!)) return createSeedState();
     return parsed.state;
   } catch {
     return createSeedState();

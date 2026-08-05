@@ -5,6 +5,8 @@ import type { BookingId } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { BookingCard } from "../app/BookingCard";
 import { EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
+import { BookingSteps } from "../booking/BookingSteps";
+import { VisitSchedule } from "./VisitSchedule";
 
 export function SitterView() {
   const { state } = useStore();
@@ -13,7 +15,12 @@ export function SitterView() {
     .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
 
   const incoming = bookings.filter((booking) => booking.status === "requested");
-  const decided = bookings.filter((booking) => booking.status !== "requested");
+  const active = bookings.filter((booking) =>
+    ["confirmed", "readyToStart", "inProgress"].includes(booking.status),
+  );
+  const closed = bookings.filter((booking) =>
+    ["declined", "cancelled"].includes(booking.status),
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,17 +46,32 @@ export function SitterView() {
       </section>
 
       <section>
-        <SectionTitle>Решённые</SectionTitle>
-        {decided.length === 0 ? (
-          <EmptyState>Пока ничего не решено.</EmptyState>
+        <SectionTitle hint="Согласования до старта опеки">Текущие брони</SectionTitle>
+        {active.length === 0 ? (
+          <EmptyState>Принятых броней нет.</EmptyState>
         ) : (
           <div className="flex flex-col gap-4">
-            {decided.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} state={state} />
+            {active.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} state={state}>
+                <BookingSteps booking={booking} role="sitter" />
+              </BookingCard>
             ))}
           </div>
         )}
       </section>
+
+      <VisitSchedule />
+
+      {closed.length > 0 && (
+        <section>
+          <SectionTitle>Закрытые</SectionTitle>
+          <div className="flex flex-col gap-4">
+            {closed.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} state={state} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

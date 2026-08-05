@@ -24,10 +24,12 @@ export function createSeedState(): DomainState {
         careNotes:
           "Сухой корм дважды в день, по 40 г. Вода — менять целиком. Лоток убрать каждый визит. " +
           "Капли от аллергии утром, флакон на кухонной полке. Прячется под диваном от незнакомых.",
+        careTasks: ["feeding", "water", "litter", "meds"],
       },
     },
     bookings: {},
     visits: {},
+    reports: {},
     journal: [],
   };
 }

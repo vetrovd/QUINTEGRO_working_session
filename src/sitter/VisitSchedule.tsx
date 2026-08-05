@@ -4,13 +4,14 @@ import { SEED_SITTER_ID } from "../domain/seed";
 import type { DomainState, Visit } from "../domain/types";
 import { compareVisits } from "../domain/visits";
 import { useStore } from "../store/StoreProvider";
-import { formatDateWithWeekday, formatTime, slotLabel } from "../app/format";
+import { careTaskLabel, formatDateWithWeekday, formatTime, slotLabel } from "../app/format";
 import { Card, EmptyState, GuardedButton, SectionTitle } from "../app/ui";
+import { ReportComposer } from "./ReportComposer";
 
 /**
- * Расписание ситтера: сегодня, неделя вперёд, позже. Отметка прихода
- * заблокирована, пока передача ключей не подтверждена обеими сторонами —
- * чтобы ситтер не приехал к закрытой двери.
+ * Расписание ситтера. «Ждут отчёта» идёт первой группой — это прямой ответ
+ * на вопрос «где я ещё не закрыл работу». Отметка прихода заблокирована,
+ * пока передача ключей не подтверждена обеими сторонами.
  */
 export function VisitSchedule() {
   const { state, now } = useStore();
@@ -22,13 +23,20 @@ export function VisitSchedule() {
     .filter((visit) => state.bookings[visit.bookingId].sitterId === SEED_SITTER_ID)
     .sort(compareVisits);
 
+  const upcoming = visits.filter((visit) => visit.status === "scheduled");
   const groups = [
-    { title: "Сегодня", items: visits.filter((visit) => visit.date === currentDate) },
+    {
+      title: "Ждут отчёта",
+      hint: "Приход отмечен, отчёт ещё не сдан",
+      items: visits.filter((visit) => visit.status === "checkedIn"),
+    },
+    { title: "Сегодня", items: upcoming.filter((visit) => visit.date === currentDate) },
     {
       title: "Неделя вперёд",
-      items: visits.filter((visit) => visit.date > currentDate && visit.date <= weekEnd),
+      items: upcoming.filter((visit) => visit.date > currentDate && visit.date <= weekEnd),
     },
-    { title: "Позже", items: visits.filter((visit) => visit.date > weekEnd) },
+    { title: "Позже", items: upcoming.filter((visit) => visit.date > weekEnd) },
+    { title: "Отчёт сдан", items: visits.filter((visit) => visit.status === "completed") },
   ].filter((group) => group.items.length > 0);
 
   return (
@@ -43,7 +51,8 @@ export function VisitSchedule() {
           {groups.map((group) => (
             <div key={group.title}>
               <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
-                {group.title}
+                {group.title} · {group.items.length}
+                {group.hint && <span className="ml-2 normal-case">{group.hint}</span>}
               </p>
               <div className="flex flex-col gap-3">
                 {group.items.map((visit) => (
@@ -63,7 +72,8 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
   const booking = state.bookings[visit.bookingId];
   const pet = state.pets[booking.petId];
   const family = state.families[booking.familyId];
-  const checkedIn = visit.status === "checkedIn";
+  const report = state.reports[visit.id];
+  const completed = visit.status === "completed";
 
   return (
     <Card>
@@ -76,19 +86,21 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
             {pet.name} · {family.name}, {family.address}
           </p>
         </div>
-        {checkedIn && visit.checkedInAt && (
+        {visit.checkedInAt && (
           <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">
             На месте с {formatTime(visit.checkedInAt)}
           </span>
         )}
       </div>
 
-      <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-        <span className="font-medium">Уход: </span>
-        {pet.careNotes}
-      </p>
+      {!completed && (
+        <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
+          <span className="font-medium">Уход: </span>
+          {pet.careNotes}
+        </p>
+      )}
 
-      {!checkedIn && (
+      {visit.status === "scheduled" && (
         <div className="mt-3">
           <GuardedButton
             guard={canCheckIn(state, visit.id, now)}
@@ -97,6 +109,16 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
             Отметить приход
           </GuardedButton>
         </div>
+      )}
+
+      {visit.status === "checkedIn" && <ReportComposer visit={visit} state={state} />}
+
+      {completed && report && (
+        <p className="mt-3 text-sm text-stone-600">
+          Отчёт отправлен: {report.tasks.map(careTaskLabel).join(", ") || "без задач"}
+          {report.photos.length > 0 && `, фото — ${report.photos.length}`}.
+          {report.readByFamilyAt ? " Семья прочитала." : " Семья ещё не прочитала."}
+        </p>
       )}
     </Card>
   );

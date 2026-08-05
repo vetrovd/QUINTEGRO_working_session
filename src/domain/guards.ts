@@ -1,4 +1,5 @@
 import { today } from "./dates";
+import { isReportEmpty } from "./reports";
 import type {
   Booking,
   BookingId,
@@ -167,6 +168,7 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
   const visit = state.visits[visitId];
   if (!visit) return deny("Визит не найден");
   if (visit.status === "cancelled") return deny("Визит отменён");
+  if (visit.status === "completed") return deny("Визит уже завершён");
   if (visit.status === "checkedIn") return deny("Приход уже отмечен");
 
   const booking = state.bookings[visit.bookingId];
@@ -175,6 +177,37 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
   }
   if (!meetGreetSettled(booking)) return deny("Знакомство ещё не состоялось");
   if (visit.date > today(now)) return deny("Визит ещё не наступил");
+  return allow;
+}
+
+// --- Отчёты ------------------------------------------------------------------
+
+export function canSaveVisitReport(state: DomainState, visitId: VisitId): Guard {
+  const visit = state.visits[visitId];
+  if (!visit) return deny("Визит не найден");
+  if (visit.status === "cancelled") return deny("Визит отменён");
+  if (state.reports[visitId]?.status === "submitted") {
+    return deny("Отчёт отправлен — изменить его нельзя");
+  }
+  if (visit.status === "scheduled") return deny("Сначала отметьте приход на визит");
+  return allow;
+}
+
+export function canSubmitVisitReport(state: DomainState, visitId: VisitId): Guard {
+  const saveable = canSaveVisitReport(state, visitId);
+  if (!saveable.allowed) return saveable;
+  const report = state.reports[visitId];
+  if (!report) return deny("Заполните отчёт перед отправкой");
+  if (isReportEmpty(report)) {
+    return deny("Отметьте выполненные задачи, приложите фото или напишите заметку");
+  }
+  return allow;
+}
+
+export function canMarkReportRead(state: DomainState, visitId: VisitId): Guard {
+  const report = state.reports[visitId];
+  if (!report || report.status !== "submitted") return deny("Отчёт ещё не сдан");
+  if (report.readByFamilyAt) return deny("Отчёт уже прочитан");
   return allow;
 }
 

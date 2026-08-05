@@ -1,6 +1,7 @@
 import { SLOT_TIMES, parseIsoDate } from "../domain/dates";
 import type {
   BookingStatus,
+  CareTask,
   IsoDate,
   IsoDateTime,
   KeyHandoverMethod,
@@ -42,7 +43,16 @@ const METHOD_LABELS: Record<KeyHandoverMethod, string> = {
 const VISIT_LABELS: Record<VisitStatus, string> = {
   scheduled: "Запланирован",
   checkedIn: "Ситтер на месте",
+  completed: "Отчёт сдан",
   cancelled: "Отменён",
+};
+
+const CARE_TASK_LABELS: Record<CareTask, string> = {
+  feeding: "Кормление",
+  water: "Свежая вода",
+  litter: "Лоток",
+  walk: "Прогулка",
+  meds: "Медикаменты",
 };
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -76,6 +86,10 @@ export function methodLabel(method: KeyHandoverMethod): string {
 
 export function visitStatusText(status: VisitStatus): string {
   return VISIT_LABELS[status];
+}
+
+export function careTaskLabel(task: CareTask): string {
+  return CARE_TASK_LABELS[task];
 }
 
 export function awaitingLabel(roles: Role[]): string {

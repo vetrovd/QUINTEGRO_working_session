@@ -4,9 +4,12 @@ import {
   canCheckIn,
   canConfirmKeyHandover,
   canMarkMeetGreetHappened,
+  canMarkReportRead,
   canProposeKeyHandover,
   canProposeMeetGreet,
   canRespondToBooking,
+  canSaveVisitReport,
+  canSubmitVisitReport,
   meetGreetSettled,
 } from "./guards";
 import type {
@@ -18,6 +21,7 @@ import type {
   KeyHandover,
   MeetGreet,
   Visit,
+  VisitReport,
 } from "./types";
 import { expandVisits } from "./visits";
 
@@ -191,6 +195,51 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
           ...state.visits,
           [visit.id]: { ...visit, status: "checkedIn", checkedInAt: ctx.now },
         },
+      });
+    }
+
+    case "VisitReportSaved": {
+      const guard = canSaveVisitReport(state, event.visitId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      const existing = state.reports[event.visitId];
+      const report: VisitReport = {
+        ...existing,
+        visitId: event.visitId,
+        tasks: event.tasks,
+        note: event.note,
+        photos: event.photos,
+        status: "draft",
+        updatedAt: ctx.now,
+      };
+      return commit(state, event, ctx, {
+        reports: { ...state.reports, [report.visitId]: report },
+      });
+    }
+
+    case "VisitReportSubmitted": {
+      const guard = canSubmitVisitReport(state, event.visitId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      const report = state.reports[event.visitId];
+      const visit = state.visits[event.visitId];
+      // Отправка отчёта — то, что завершает визит.
+      return commit(state, event, ctx, {
+        reports: {
+          ...state.reports,
+          [event.visitId]: { ...report, status: "submitted", submittedAt: ctx.now },
+        },
+        visits: {
+          ...state.visits,
+          [visit.id]: { ...visit, status: "completed", completedAt: ctx.now },
+        },
+      });
+    }
+
+    case "VisitReportRead": {
+      const guard = canMarkReportRead(state, event.visitId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      const report = state.reports[event.visitId];
+      return commit(state, event, ctx, {
+        reports: { ...state.reports, [event.visitId]: { ...report, readByFamilyAt: ctx.now } },
       });
     }
   }

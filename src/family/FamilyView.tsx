@@ -6,6 +6,7 @@ import { VisitProgress } from "../app/VisitProgress";
 import { EmptyState, GuardedButton, SectionTitle } from "../app/ui";
 import { BookingSteps } from "../booking/BookingSteps";
 import { BookingCalendar } from "./BookingCalendar";
+import { ReportsFeed } from "./ReportsFeed";
 
 export function FamilyView() {
   const { state, dispatch } = useStore();
@@ -16,6 +17,8 @@ export function FamilyView() {
   return (
     <div className="flex flex-col gap-8">
       <BookingCalendar />
+
+      <ReportsFeed />
 
       <section>
         <SectionTitle hint="Статус виден сразу, как ситтер ответит">Мои брони</SectionTitle>

@@ -24,12 +24,17 @@ export interface Sitter {
   name: string;
 }
 
+export const CARE_TASKS = ["feeding", "water", "litter", "walk", "meds"] as const;
+export type CareTask = (typeof CARE_TASKS)[number];
+
 export interface Pet {
   id: PetId;
   familyId: FamilyId;
   name: string;
   species: string;
   careNotes: string;
+  /** Чеклист для отчёта: у кота нет прогулки, у собаки нет лотка. */
+  careTasks: CareTask[];
 }
 
 /**
@@ -68,7 +73,8 @@ export interface KeyHandover {
   confirmedBySitter: boolean;
 }
 
-export type VisitStatus = "scheduled" | "checkedIn" | "cancelled";
+/** Визит завершается отправкой отчёта, а не уходом ситтера из дома. */
+export type VisitStatus = "scheduled" | "checkedIn" | "completed" | "cancelled";
 
 export interface Visit {
   id: VisitId;
@@ -77,6 +83,27 @@ export interface Visit {
   slot: SlotOfDay;
   status: VisitStatus;
   checkedInAt?: IsoDateTime;
+  completedAt?: IsoDateTime;
+}
+
+export type VisitReportStatus = "draft" | "submitted";
+
+/**
+ * Отчёт по одному визиту. После отправки неизменяем — это доказательство
+ * выполненной работы. Семья его читает, но не акцептует: прочтение не
+ * двигает деньги (ADR 0001).
+ */
+export interface VisitReport {
+  visitId: VisitId;
+  /** Выполненные задачи из чеклиста питомца. */
+  tasks: CareTask[];
+  note: string;
+  /** Фото как data URL — прототип живёт в localStorage. */
+  photos: string[];
+  status: VisitReportStatus;
+  updatedAt: IsoDateTime;
+  submittedAt?: IsoDateTime;
+  readByFamilyAt?: IsoDateTime;
 }
 
 export interface Booking {
@@ -131,7 +158,16 @@ export type DomainEvent =
       direction: KeyHandoverDirection;
       by: Role;
     }
-  | { type: "VisitCheckedIn"; visitId: VisitId };
+  | { type: "VisitCheckedIn"; visitId: VisitId }
+  | {
+      type: "VisitReportSaved";
+      visitId: VisitId;
+      tasks: CareTask[];
+      note: string;
+      photos: string[];
+    }
+  | { type: "VisitReportSubmitted"; visitId: VisitId }
+  | { type: "VisitReportRead"; visitId: VisitId };
 
 /**
  * Запись журнала. Отклонённый переход тоже попадает сюда — молча ничего не
@@ -149,5 +185,7 @@ export interface DomainState {
   pets: Record<PetId, Pet>;
   bookings: Record<BookingId, Booking>;
   visits: Record<VisitId, Visit>;
+  /** Ключ — визит: на один визит ровно один отчёт. */
+  reports: Record<VisitId, VisitReport>;
   journal: JournalEntry[];
 }

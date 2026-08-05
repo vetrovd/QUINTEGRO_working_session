@@ -13,12 +13,15 @@ export function VisitProgress({
   const visits = visitsOfBooking(state, bookingId).filter((visit) => visit.status !== "cancelled");
   if (visits.length === 0) return null;
 
-  const checkedIn = visits.filter((visit) => visit.status === "checkedIn");
-  const last = checkedIn.at(-1);
+  const visited = visits.filter(
+    (visit) => visit.status === "checkedIn" || visit.status === "completed",
+  );
+  const reported = visits.filter((visit) => visit.status === "completed");
+  const last = visited.at(-1);
 
   return (
     <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-      Визиты: {checkedIn.length} из {visits.length} отмечены.
+      Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}.
       {last?.checkedInAt && (
         <>
           {" "}

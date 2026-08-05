@@ -3,6 +3,7 @@ import { reduce, reduceAll } from "./reducer";
 import type { ReduceContext } from "./reducer";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID, createSeedState } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
+import { visitId } from "./visits";
 
 /**
  * Общие заготовки для тестов домена. Даты считаются от «сегодня», чтобы
@@ -57,6 +58,13 @@ export function readyToStart(): DomainState {
     ],
     confirmed(),
   );
+}
+
+export const TODAY_MORNING = visitId(BOOKING_ID, TODAY, "morning");
+
+/** Ситтер отметил приход на сегодняшний утренний визит. */
+export function checkedIn(): DomainState {
+  return reduce(readyToStart(), { type: "VisitCheckedIn", visitId: TODAY_MORNING }, CTX);
 }
 
 export function booking(state: DomainState) {

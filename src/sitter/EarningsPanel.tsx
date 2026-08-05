@@ -52,7 +52,10 @@ export function EarningsPanel() {
             </p>
           )}
 
-          {PARTS.filter((part) => balance[part.status].count > 0).map((part) => (
+          {/* Выведенное расписано в истории выводов — здесь дублировать не нужно. */}
+          {PARTS.filter(
+            (part) => part.status !== "paidOut" && balance[part.status].count > 0,
+          ).map((part) => (
             <Breakdown
               key={part.status}
               label={part.label}

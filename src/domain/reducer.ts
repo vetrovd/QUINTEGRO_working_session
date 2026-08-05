@@ -9,6 +9,7 @@ import {
   canProposeKeyHandover,
   canProposeMeetGreet,
   canRequestHandback,
+  canRequestPayout,
   canRespondToBooking,
   canSaveVisitReport,
   canSubmitVisitReport,
@@ -22,6 +23,7 @@ import type {
   JournalEntry,
   KeyHandover,
   MeetGreet,
+  Payout,
   Visit,
   VisitReport,
 } from "./types";
@@ -252,6 +254,24 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         ...state.bookings[event.bookingId],
         status: "awaitingHandback",
         handbackRequestedAt: ctx.now,
+      });
+    }
+
+    case "PayoutRequested": {
+      if (state.payouts[event.payoutId]) {
+        return reject(state, event, ctx, "Вывод с таким идентификатором уже существует");
+      }
+      const guard = canRequestPayout(state, event.sitterId, event.visitIds);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      // В прототипе вывод мгновенный: запрошен — значит выплачен.
+      const payout: Payout = {
+        id: event.payoutId,
+        sitterId: event.sitterId,
+        visitIds: event.visitIds,
+        paidAt: ctx.now,
+      };
+      return commit(state, event, ctx, {
+        payouts: { ...state.payouts, [payout.id]: payout },
       });
     }
 

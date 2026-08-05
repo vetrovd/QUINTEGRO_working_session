@@ -30,6 +30,7 @@ export function createSeedState(): DomainState {
     bookings: {},
     visits: {},
     reports: {},
+    payouts: {},
     journal: [],
   };
 }

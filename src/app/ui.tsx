@@ -13,10 +13,12 @@ export function GuardedButton({
   children: ReactNode;
   tone?: "primary" | "neutral" | "danger";
 }) {
+  // enabled:hover — иначе наведение подсвечивает и заблокированную кнопку,
+  // и она перестаёт выглядеть заблокированной.
   const tones = {
-    primary: "bg-stone-900 text-white hover:bg-stone-700",
-    neutral: "bg-white text-stone-900 border border-stone-300 hover:bg-stone-50",
-    danger: "bg-white text-red-700 border border-red-300 hover:bg-red-50",
+    primary: "bg-stone-900 text-white enabled:hover:bg-stone-700",
+    neutral: "bg-white text-stone-900 border border-stone-300 enabled:hover:bg-stone-50",
+    danger: "bg-white text-red-700 border border-red-300 enabled:hover:bg-red-50",
   };
 
   return (

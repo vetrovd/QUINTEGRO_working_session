@@ -1,4 +1,5 @@
 import { today } from "./dates";
+import { earningOfVisit } from "./earnings";
 import { isReportEmpty } from "./reports";
 import type {
   Booking,
@@ -8,6 +9,7 @@ import type {
   IsoDateTime,
   KeyHandoverDirection,
   Role,
+  SitterId,
   VisitId,
 } from "./types";
 
@@ -252,6 +254,33 @@ export function canConfirmHandback(state: DomainState, bookingId: BookingId): Gu
   if (booking.status === "completed") return deny("Бронь уже закрыта");
   if (booking.status !== "awaitingHandback") {
     return deny("Ситтер ещё не заявил сдачу работы");
+  }
+  return allow;
+}
+
+// --- Payout ------------------------------------------------------------------
+
+/**
+ * Инвариант 5 «вывод не превышает доступное» проверяется поштучно: вывод — это
+ * набор начислений, поэтому достаточно, чтобы каждое входящее начисление было
+ * доступным и не выведенным. Сумму сверять не нужно, превысить нечем.
+ */
+export function canRequestPayout(
+  state: DomainState,
+  sitterId: SitterId,
+  visitIds: VisitId[],
+): Guard {
+  if (visitIds.length === 0) return deny("Выберите визиты для вывода");
+  if (new Set(visitIds).size !== visitIds.length) return deny("Визит указан в выводе дважды");
+
+  for (const visitId of visitIds) {
+    const earning = earningOfVisit(state, visitId);
+    if (!earning) return deny("По визиту нет начисления");
+    if (earning.sitterId !== sitterId) return deny("Начисление другого ситтера");
+    if (earning.status === "locked") {
+      return deny("Деньги за визит заблокированы — семья не подтвердила закрытие брони");
+    }
+    if (earning.status === "paidOut") return deny("Деньги за визит уже выведены");
   }
   return allow;
 }

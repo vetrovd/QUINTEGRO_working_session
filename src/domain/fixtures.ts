@@ -111,6 +111,20 @@ export function closed(): DomainState {
   return reduce(handbackRequested(), { type: "HandbackConfirmed", bookingId: BOOKING_ID }, CTX);
 }
 
+export const TODAY_EVENING = visitId(BOOKING_ID, TODAY, "evening");
+
+/** Закрытая бронь с двумя начислениями — на них проверяется частичный вывод. */
+export function closedTwoVisits(): DomainState {
+  const worked = completeVisit(completeVisit(readyToStart(), TODAY_MORNING), TODAY_EVENING);
+  return run(
+    [
+      { type: "HandbackRequested", bookingId: BOOKING_ID },
+      { type: "HandbackConfirmed", bookingId: BOOKING_ID },
+    ],
+    keysReturned(worked),
+  );
+}
+
 export function booking(state: DomainState) {
   return state.bookings[BOOKING_ID];
 }

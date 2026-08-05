@@ -7,6 +7,7 @@ import { BookingCard } from "../app/BookingCard";
 import { EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
 import { BookingSteps } from "../booking/BookingSteps";
 import { EarningsPanel } from "./EarningsPanel";
+import { PayoutPanel } from "./PayoutPanel";
 import { VisitSchedule } from "./VisitSchedule";
 
 export function SitterView() {
@@ -64,6 +65,8 @@ export function SitterView() {
       <VisitSchedule />
 
       <EarningsPanel />
+
+      <PayoutPanel />
 
       {closed.length > 0 && (
         <section>

@@ -7,6 +7,7 @@ export type SitterId = string;
 export type PetId = string;
 export type BookingId = string;
 export type VisitId = string;
+export type PayoutId = string;
 
 export type Role = "family" | "sitter";
 
@@ -131,6 +132,22 @@ export interface Booking {
   declineReason?: string;
 }
 
+/**
+ * Вывод денег — набор начислений, а не сумма: начисление либо выведено целиком,
+ * либо не выведено, половины визита не бывает. Сами суммы не хранятся, они
+ * считаются по визитам вывода — иначе история могла бы разойтись с деньгами.
+ *
+ * В отличие от Earning, Payout хранится: «вывел» — это факт, который из
+ * состояния визитов не вывести. В прототипе вывод мгновенный, поэтому
+ * requested → paid отдельными событиями не разделён.
+ */
+export interface Payout {
+  id: PayoutId;
+  sitterId: SitterId;
+  visitIds: VisitId[];
+  paidAt: IsoDateTime;
+}
+
 export type DomainEvent =
   | {
       type: "BookingRequested";
@@ -178,7 +195,14 @@ export type DomainEvent =
   | { type: "HandbackRequested"; bookingId: BookingId }
   /** Семья подтверждает закрытие — единственное событие, которое даёт ситтеру
    *  доступ к деньгам (ADR 0001). Авто-подтверждение по таймауту — тикет 10. */
-  | { type: "HandbackConfirmed"; bookingId: BookingId };
+  | { type: "HandbackConfirmed"; bookingId: BookingId }
+  | {
+      type: "PayoutRequested";
+      payoutId: PayoutId;
+      sitterId: SitterId;
+      /** Начисления, входящие в вывод. Ситтер выбирает, что выводить. */
+      visitIds: VisitId[];
+    };
 
 /**
  * Запись журнала. Отклонённый переход тоже попадает сюда — молча ничего не
@@ -198,5 +222,6 @@ export interface DomainState {
   visits: Record<VisitId, Visit>;
   /** Ключ — визит: на один визит ровно один отчёт. */
   reports: Record<VisitId, VisitReport>;
+  payouts: Record<PayoutId, Payout>;
   journal: JournalEntry[];
 }

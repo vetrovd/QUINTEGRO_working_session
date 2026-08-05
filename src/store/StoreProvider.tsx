@@ -8,7 +8,7 @@ import type { DomainEvent, DomainState, IsoDateTime, Role } from "../domain/type
 const STORAGE_KEY = "pet-sitting-prototype";
 /** Поднимать при любом изменении формы DomainState — иначе старое состояние
  *  загрузится как валидное и упадёт на отсутствующей коллекции. */
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 const REQUIRED_COLLECTIONS = [
   "families",
   "sitters",
@@ -16,6 +16,7 @@ const REQUIRED_COLLECTIONS = [
   "bookings",
   "visits",
   "reports",
+  "payouts",
   "journal",
 ] as const;
 

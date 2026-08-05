@@ -44,6 +44,7 @@ export type Balance = Record<EarningStatus, Bucket>;
 export function earningsOfBooking(state: DomainState, bookingId: BookingId): Earning[] {
   const booking = state.bookings[bookingId];
   if (!booking) return [];
+  const paid = paidOutVisitIds(state);
 
   return visitsOfBooking(state, bookingId)
     .filter((visit) => visit.status === "completed")
@@ -58,10 +59,22 @@ export function earningsOfBooking(state: DomainState, bookingId: BookingId): Ear
         grossMinor: gross,
         feeMinor: feeMinor(gross),
         netMinor: netMinor(gross),
-        status: earningStatus(booking),
+        status: earningStatus(booking, paid.has(visit.id)),
         completedAt: visit.completedAt ?? visit.checkedInAt ?? booking.requestedAt,
       };
     });
+}
+
+/** Начисление по одному визиту — им пользуются и выводы, и их история. */
+export function earningOfVisit(state: DomainState, visitId: VisitId): Earning | undefined {
+  const visit = state.visits[visitId];
+  if (!visit) return undefined;
+  return earningsOfBooking(state, visit.bookingId).find((earning) => earning.visitId === visitId);
+}
+
+/** Визиты, деньги за которые уже выведены. */
+export function paidOutVisitIds(state: DomainState): Set<VisitId> {
+  return new Set(Object.values(state.payouts).flatMap((payout) => payout.visitIds));
 }
 
 export function earningsOfSitter(state: DomainState, sitterId: SitterId): Earning[] {
@@ -98,9 +111,11 @@ export function plannedTotalMinor(state: DomainState, bookingId: BookingId): num
 
 /**
  * Правило разблокировки (ADR 0001): деньги становятся доступными только когда
- * семья подтвердила закрытие брони. Тикет 09 добавит сюда `paidOut`.
+ * семья подтвердила закрытие брони. Выведенное дальше не участвует в доступном —
+ * «заработал» и «вывел» это разные вещи.
  */
-function earningStatus(booking: Booking): EarningStatus {
+function earningStatus(booking: Booking, paidOut: boolean): EarningStatus {
+  if (paidOut) return "paidOut";
   return booking.status === "completed" ? "available" : "locked";
 }
 

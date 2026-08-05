@@ -1,3 +1,19 @@
+/**
+ * Комиссия платформы. Задана здесь и только здесь: ситтеру всегда показываются
+ * все три величины — до комиссии, комиссия, на руки.
+ */
+export const PLATFORM_FEE_RATE = 0.2;
+
+export function feeMinor(grossMinor: number): number {
+  return Math.round(grossMinor * PLATFORM_FEE_RATE);
+}
+
+export function netMinor(grossMinor: number): number {
+  return grossMinor - feeMinor(grossMinor);
+}
+
+export const feeRateLabel = `${Math.round(PLATFORM_FEE_RATE * 100)}%`;
+
 /** Деньги хранятся в копейках — чтобы расчёты не расходились на дробях. */
 const formatter = new Intl.NumberFormat("ru-RU", {
   style: "currency",

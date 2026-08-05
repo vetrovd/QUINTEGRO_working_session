@@ -31,6 +31,8 @@ export function statusLabel(status: BookingStatus): string {
       return "готова к старту";
     case "inProgress":
       return "в работе";
+    case "completed":
+      return "опека завершена";
     case "declined":
       return "отклонена";
     case "cancelled":

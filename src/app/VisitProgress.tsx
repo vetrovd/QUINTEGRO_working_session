@@ -1,3 +1,5 @@
+import { earnedTotalMinor, plannedTotalMinor } from "../domain/earnings";
+import { formatMoney } from "../domain/money";
 import type { BookingId, DomainState } from "../domain/types";
 import { visitsOfBooking } from "../domain/visits";
 import { formatDate, formatTime, slotName } from "./format";
@@ -20,15 +22,22 @@ export function VisitProgress({
   const last = visited.at(-1);
 
   return (
-    <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-      Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}.
-      {last?.checkedInAt && (
-        <>
-          {" "}
-          Последний — {formatDate(last.date)}, {slotName(last.slot).toLowerCase()}, ситтер на месте с{" "}
-          {formatTime(last.checkedInAt)}.
-        </>
-      )}
-    </p>
+    <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
+      <p>
+        Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}.
+        {last?.checkedInAt && (
+          <>
+            {" "}
+            Последний — {formatDate(last.date)}, {slotName(last.slot).toLowerCase()}, ситтер на
+            месте с {formatTime(last.checkedInAt)}.
+          </>
+        )}
+      </p>
+      {/* Начислено считается по завершённым визитам, а не по плану периода. */}
+      <p className="mt-1 text-stone-600">
+        Начислено за завершённые визиты: {formatMoney(earnedTotalMinor(state, bookingId))} · план{" "}
+        {formatMoney(plannedTotalMinor(state, bookingId))}
+      </p>
+    </div>
   );
 }

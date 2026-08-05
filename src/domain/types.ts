@@ -38,14 +38,17 @@ export interface Pet {
 }
 
 /**
- * Статусы до и во время опеки. Закрытие (awaitingHandback, completed,
- * disputed, terminatedEarly) добавляют тикеты 08, 11 и 12.
+ * Статусы брони. Переход в `completed` вводит тикет 08 (Handback) — статус
+ * объявлен здесь, потому что от него зависит правило разблокировки денег
+ * (ADR 0001). Остальные ветки закрытия — awaitingHandback, disputed,
+ * terminatedEarly — добавляют тикеты 08, 11 и 12.
  */
 export type BookingStatus =
   | "requested"
   | "confirmed"
   | "readyToStart"
   | "inProgress"
+  | "completed"
   | "declined"
   | "cancelled";
 

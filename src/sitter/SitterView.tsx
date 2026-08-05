@@ -6,6 +6,7 @@ import { useStore } from "../store/StoreProvider";
 import { BookingCard } from "../app/BookingCard";
 import { EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
 import { BookingSteps } from "../booking/BookingSteps";
+import { EarningsPanel } from "./EarningsPanel";
 import { VisitSchedule } from "./VisitSchedule";
 
 export function SitterView() {
@@ -61,6 +62,8 @@ export function SitterView() {
       </section>
 
       <VisitSchedule />
+
+      <EarningsPanel />
 
       {closed.length > 0 && (
         <section>

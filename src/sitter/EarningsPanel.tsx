@@ -21,6 +21,9 @@ export function EarningsPanel() {
   const { state } = useStore();
   const balance = balanceOfSitter(state, SEED_SITTER_ID);
   const hasEarnings = PARTS.some((part) => balance[part.status].count > 0);
+  const disputedLocked = balance.locked.items.filter(
+    (earning) => state.bookings[earning.bookingId].status === "disputed",
+  ).length;
 
   return (
     <section>
@@ -45,10 +48,20 @@ export function EarningsPanel() {
             ))}
           </div>
 
-          {balance.locked.count > 0 && (
+          {/* Спор — другая причина блокировки: обещание «семья подтвердит» для
+              него неверно, поэтому объяснения не складываются, а исключают друг
+              друга. */}
+          {balance.locked.count - disputedLocked > 0 && (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
               Заблокированное разблокируется, когда семья подтвердит закрытие брони. До этого
               вывести его нельзя.
+            </p>
+          )}
+
+          {disputedLocked > 0 && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
+              Заблокировано по спору: визитов {disputedLocked}. Семья оспорила закрытие, и эти
+              деньги останутся заблокированными до разбора.
             </p>
           )}
 

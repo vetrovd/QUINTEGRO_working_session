@@ -7,13 +7,15 @@ export function Step({
   children,
 }: {
   title: string;
-  state: "done" | "waiting" | "todo";
+  state: "done" | "waiting" | "todo" | "blocked";
   children: ReactNode;
 }) {
   const marker = {
     done: { tone: "bg-emerald-100 text-emerald-900", glyph: "✓" },
     waiting: { tone: "bg-amber-100 text-amber-900", glyph: "•" },
     todo: { tone: "bg-stone-200 text-stone-500", glyph: "•" },
+    /** Тупик: дальше в прототипе хода нет. */
+    blocked: { tone: "bg-red-100 text-red-900", glyph: "!" },
   }[state];
 
   return (

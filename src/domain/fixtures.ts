@@ -111,6 +111,15 @@ export function closed(): DomainState {
   return reduce(handbackRequested(), { type: "HandbackConfirmed", bookingId: BOOKING_ID }, CTX);
 }
 
+/** Семья оспорила сдачу работы — терминальный тупик прототипа. */
+export function disputed(reason = "Лоток не убран, воды нет"): DomainState {
+  return reduce(
+    handbackRequested(),
+    { type: "HandbackDisputed", bookingId: BOOKING_ID, reason },
+    CTX,
+  );
+}
+
 export const TODAY_EVENING = visitId(BOOKING_ID, TODAY, "evening");
 
 /** Закрытая бронь с двумя начислениями — на них проверяется частичный вывод. */

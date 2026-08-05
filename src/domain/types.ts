@@ -40,9 +40,10 @@ export interface Pet {
 
 /**
  * Статусы брони. `awaitingHandback` — ситтер заявил сдачу работы, ждём семью;
- * `completed` — семья подтвердила, и только тогда деньги разблокированы
- * (ADR 0001). Остальные ветки закрытия — disputed и terminatedEarly —
- * добавляют тикеты 11 и 12.
+ * `completed` — семья подтвердила, и только тогда деньги разблокированы;
+ * `disputed` — семья оспорила, деньги остаются заблокированными (ADR 0001).
+ * Спор терминален: роли, которая разбирает конфликты, в прототипе нет.
+ * Досрочное прерывание — terminatedEarly — добавляет тикет 12.
  */
 export type BookingStatus =
   | "requested"
@@ -51,6 +52,7 @@ export type BookingStatus =
   | "inProgress"
   | "awaitingHandback"
   | "completed"
+  | "disputed"
   | "declined"
   | "cancelled";
 
@@ -131,6 +133,9 @@ export interface Booking {
   completedAt?: IsoDateTime;
   /** Чем закрылась бронь: подтверждением семьи или молчанием (ADR 0001). */
   closedBy?: "family" | "timeout";
+  disputedAt?: IsoDateTime;
+  /** Что именно не так. Спор без причины бесполезен для разбора. */
+  disputeReason?: string;
   declineReason?: string;
 }
 
@@ -201,6 +206,9 @@ export type DomainEvent =
   /** Молчание семьи в течение окна ответа. Событие отправляет хранилище, когда
    *  время дошло до дедлайна — само время в редьюсер не протекает. */
   | { type: "HandbackAutoConfirmed"; bookingId: BookingId }
+  /** Семья оспорила сдачу работы. Деньги остаются заблокированными, и это
+   *  терминальное состояние прототипа — разбирать спор некому. */
+  | { type: "HandbackDisputed"; bookingId: BookingId; reason: string }
   | {
       type: "PayoutRequested";
       payoutId: PayoutId;

@@ -5,6 +5,7 @@ import {
   canCheckIn,
   canConfirmHandback,
   canConfirmKeyHandover,
+  canDisputeHandback,
   canMarkMeetGreetHappened,
   canMarkReportRead,
   canProposeKeyHandover,
@@ -286,6 +287,19 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         status: "completed",
         completedAt: ctx.now,
         closedBy: "family",
+      });
+    }
+
+    case "HandbackDisputed": {
+      const guard = canDisputeHandback(state, event.bookingId, event.reason);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      // Деньги остаются заблокированными: available бывает только у закрытой
+      // брони (ADR 0001), поэтому отдельного правила про блокировку здесь нет.
+      return commitBooking(state, event, ctx, {
+        ...state.bookings[event.bookingId],
+        status: "disputed",
+        disputedAt: ctx.now,
+        disputeReason: event.reason.trim(),
       });
     }
 

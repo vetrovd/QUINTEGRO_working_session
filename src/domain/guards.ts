@@ -38,6 +38,8 @@ export function statusLabel(status: BookingStatus): string {
       return "ждёт подтверждения закрытия";
     case "completed":
       return "опека закрыта";
+    case "disputed":
+      return "спор";
     case "declined":
       return "отклонена";
     case "cancelled":
@@ -59,6 +61,7 @@ export function canCancelBooking(state: DomainState, bookingId: BookingId): Guar
   if (!booking) return deny("Бронь не найдена");
   if (booking.status === "declined") return deny("Ситтер отклонил бронь — отменять нечего");
   if (booking.status === "cancelled") return deny("Бронь уже отменена");
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека закрыта — отменять нечего");
   if (booking.status === "inProgress" || booking.status === "awaitingHandback") {
     return deny("Опека уже началась — нужно досрочное прерывание");
@@ -185,6 +188,7 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
   if (booking.status === "awaitingHandback") {
     return deny("Работа сдана на подтверждение — ключи уже возвращены");
   }
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека закрыта");
   if (booking.keys.handover.status !== "done") {
     return deny("Передача ключей не подтверждена обеими сторонами — доступа в дом нет");
@@ -232,6 +236,7 @@ export function canRequestHandback(state: DomainState, bookingId: BookingId): Gu
   if (booking.status === "awaitingHandback") {
     return deny("Заявка уже отправлена — ждём подтверждения семьи");
   }
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека уже закрыта");
   if (booking.status !== "inProgress") {
     return deny(`Опека ещё не началась: бронь в статусе «${statusLabel(booking.status)}»`);
@@ -248,14 +253,33 @@ export function canRequestHandback(state: DomainState, bookingId: BookingId): Gu
   return allow;
 }
 
+/**
+ * Спор — терминальное состояние прототипа: разбирать его некому, поэтому из
+ * него нет ни одного перехода. Причина отказа одна на все выходы.
+ */
+export const DISPUTE_DEAD_END = "Открыт спор — дальше нужен разбор, которого в прототипе нет";
+
 /** Подтверждение семьи — единственная точка разблокировки денег (ADR 0001). */
 export function canConfirmHandback(state: DomainState, bookingId: BookingId): Guard {
   const booking = state.bookings[bookingId];
   if (!booking) return deny("Бронь не найдена");
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Бронь уже закрыта");
   if (booking.status !== "awaitingHandback") {
     return deny("Ситтер ещё не заявил сдачу работы");
   }
+  return allow;
+}
+
+/** Оспорить можно только заявленную сдачу работы, и только с причиной. */
+export function canDisputeHandback(
+  state: DomainState,
+  bookingId: BookingId,
+  reason: string,
+): Guard {
+  const confirmable = canConfirmHandback(state, bookingId);
+  if (!confirmable.allowed) return confirmable;
+  if (reason.trim().length === 0) return deny("Опишите, что пошло не так");
   return allow;
 }
 
@@ -314,6 +338,7 @@ function requireActiveBooking(booking: Booking): Guard {
   if (booking.status === "declined") return deny("Ситтер отклонил бронь");
   if (booking.status === "cancelled") return deny("Бронь отменена");
   if (booking.status === "requested") return deny("Ситтер ещё не принял бронь");
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека закрыта");
   return allow;
 }

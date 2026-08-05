@@ -17,8 +17,11 @@ export function SitterView() {
     .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
 
   const incoming = bookings.filter((booking) => booking.status === "requested");
+  // Спор не в «закрытых»: бронь не закрыта, и деньги ситтера в ней зависли.
   const active = bookings.filter((booking) =>
-    ["confirmed", "readyToStart", "inProgress", "awaitingHandback"].includes(booking.status),
+    ["confirmed", "readyToStart", "inProgress", "awaitingHandback", "disputed"].includes(
+      booking.status,
+    ),
   );
   const closed = bookings.filter((booking) =>
     ["completed", "declined", "cancelled"].includes(booking.status),

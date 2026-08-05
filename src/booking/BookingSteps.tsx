@@ -14,7 +14,8 @@ export function BookingSteps({ booking, role }: { booking: Booking; role: Role }
   const closing =
     booking.status === "inProgress" ||
     booking.status === "awaitingHandback" ||
-    booking.status === "completed";
+    booking.status === "completed" ||
+    booking.status === "disputed";
   if (!preparing && !closing) return null;
 
   const banner = bannerOf(booking);
@@ -39,11 +40,17 @@ export function BookingSteps({ booking, role }: { booking: Booking; role: Role }
 
 const AMBER = "bg-amber-50 text-amber-900";
 const EMERALD = "bg-emerald-50 text-emerald-900";
+const RED = "bg-red-50 text-red-900";
 
 function bannerOf(booking: Booking): { tone: string; text: string } {
   switch (booking.status) {
     case "awaitingHandback":
       return { tone: AMBER, text: "Работа сдана — ждём подтверждения семьи." };
+    case "disputed":
+      return {
+        tone: RED,
+        text: "Открыт спор: бронь не закрыта, деньги ситтера заблокированы до разбора.",
+      };
     case "completed":
       return { tone: EMERALD, text: "Опека закрыта: ключи возвращены, работа принята." };
     case "inProgress":

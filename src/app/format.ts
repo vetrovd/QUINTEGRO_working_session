@@ -24,6 +24,7 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   inProgress: "Опека идёт",
   awaitingHandback: "Ждёт подтверждения закрытия",
   completed: "Опека закрыта",
+  disputed: "Спор",
   declined: "Отклонена",
   cancelled: "Отменена",
 };
@@ -35,6 +36,7 @@ const STATUS_TONES: Record<BookingStatus, string> = {
   inProgress: "bg-emerald-100 text-emerald-900",
   awaitingHandback: "bg-amber-200 text-amber-900",
   completed: "bg-stone-800 text-white",
+  disputed: "bg-red-600 text-white",
   declined: "bg-red-100 text-red-900",
   cancelled: "bg-stone-200 text-stone-600",
 };
@@ -83,6 +85,7 @@ const EVENT_LABELS: Record<DomainEvent["type"], string> = {
   HandbackRequested: "Ситтер заявил сдачу работы",
   HandbackConfirmed: "Семья подтвердила закрытие",
   HandbackAutoConfirmed: "Закрытие по молчанию семьи",
+  HandbackDisputed: "Семья оспорила закрытие",
   PayoutRequested: "Ситтер вывел деньги",
 };
 

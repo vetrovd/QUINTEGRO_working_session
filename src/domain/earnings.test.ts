@@ -5,35 +5,21 @@ import {
   earningsOfBooking,
   plannedTotalMinor,
 } from "./earnings";
-import { BOOKING_ID, CTX, TODAY, checkedIn, readyToStart, run } from "./fixtures";
+import {
+  BOOKING_ID,
+  CTX,
+  TODAY,
+  checkedIn,
+  closed,
+  completeVisit,
+  readyToStart,
+} from "./fixtures";
 import { PLATFORM_FEE_RATE, feeMinor, netMinor } from "./money";
 import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
-import type { DomainEvent, DomainState } from "./types";
 import { visitId } from "./visits";
 
 const RATE = 70_000;
-
-/** Бронь закрыта. Переход в этот статус вводит тикет 08 — здесь проверяется
- *  только правило разблокировки денег, которое от него зависит. */
-function withClosedBooking(state: DomainState): DomainState {
-  return {
-    ...state,
-    bookings: {
-      ...state.bookings,
-      [BOOKING_ID]: { ...state.bookings[BOOKING_ID], status: "completed" },
-    },
-  };
-}
-
-function completeVisit(state: DomainState, id: string): DomainState {
-  const events: DomainEvent[] = [
-    { type: "VisitCheckedIn", visitId: id },
-    { type: "VisitReportSaved", visitId: id, tasks: ["feeding"], note: "", photos: [] },
-    { type: "VisitReportSubmitted", visitId: id },
-  ];
-  return run(events, state);
-}
 
 describe("возникновение начислений", () => {
   it("начислений нет, пока визиты не завершены", () => {
@@ -89,8 +75,7 @@ describe("баланс", () => {
   });
 
   it("закрытие брони переводит начисления в доступные", () => {
-    const worked = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
-    const balance = balanceOfSitter(withClosedBooking(worked), SEED_SITTER_ID);
+    const balance = balanceOfSitter(closed(), SEED_SITTER_ID);
 
     expect(balance.locked.count).toBe(0);
     expect(balance.available.count).toBe(1);

@@ -98,7 +98,7 @@ export function plannedTotalMinor(state: DomainState, bookingId: BookingId): num
 
 /**
  * Правило разблокировки (ADR 0001): деньги становятся доступными только когда
- * бронь закрыта. Тикет 09 добавит сюда `paidOut` для выведенных начислений.
+ * семья подтвердила закрытие брони. Тикет 09 добавит сюда `paidOut`.
  */
 function earningStatus(booking: Booking): EarningStatus {
   return booking.status === "completed" ? "available" : "locked";

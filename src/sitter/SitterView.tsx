@@ -17,10 +17,10 @@ export function SitterView() {
 
   const incoming = bookings.filter((booking) => booking.status === "requested");
   const active = bookings.filter((booking) =>
-    ["confirmed", "readyToStart", "inProgress"].includes(booking.status),
+    ["confirmed", "readyToStart", "inProgress", "awaitingHandback"].includes(booking.status),
   );
   const closed = bookings.filter((booking) =>
-    ["declined", "cancelled"].includes(booking.status),
+    ["completed", "declined", "cancelled"].includes(booking.status),
   );
 
   return (
@@ -47,7 +47,7 @@ export function SitterView() {
       </section>
 
       <section>
-        <SectionTitle hint="Согласования до старта опеки">Текущие брони</SectionTitle>
+        <SectionTitle hint="Согласования до старта опеки и её закрытие">Текущие брони</SectionTitle>
         {active.length === 0 ? (
           <EmptyState>Принятых броней нет.</EmptyState>
         ) : (
@@ -70,7 +70,10 @@ export function SitterView() {
           <SectionTitle>Закрытые</SectionTitle>
           <div className="flex flex-col gap-4">
             {closed.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} state={state} />
+              <BookingCard key={booking.id} booking={booking} state={state}>
+                {/* У закрытой брони шаги остаются как запись: чем и когда закончилось. */}
+                <BookingSteps booking={booking} role="sitter" />
+              </BookingCard>
             ))}
           </div>
         </section>

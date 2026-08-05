@@ -21,7 +21,8 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   confirmed: "Принята",
   readyToStart: "Готова к старту",
   inProgress: "Опека идёт",
-  completed: "Опека завершена",
+  awaitingHandback: "Ждёт подтверждения закрытия",
+  completed: "Опека закрыта",
   declined: "Отклонена",
   cancelled: "Отменена",
 };
@@ -31,6 +32,7 @@ const STATUS_TONES: Record<BookingStatus, string> = {
   confirmed: "bg-sky-100 text-sky-900",
   readyToStart: "bg-indigo-100 text-indigo-900",
   inProgress: "bg-emerald-100 text-emerald-900",
+  awaitingHandback: "bg-amber-200 text-amber-900",
   completed: "bg-stone-800 text-white",
   declined: "bg-red-100 text-red-900",
   cancelled: "bg-stone-200 text-stone-600",

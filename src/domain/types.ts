@@ -38,16 +38,17 @@ export interface Pet {
 }
 
 /**
- * Статусы брони. Переход в `completed` вводит тикет 08 (Handback) — статус
- * объявлен здесь, потому что от него зависит правило разблокировки денег
- * (ADR 0001). Остальные ветки закрытия — awaitingHandback, disputed,
- * terminatedEarly — добавляют тикеты 08, 11 и 12.
+ * Статусы брони. `awaitingHandback` — ситтер заявил сдачу работы, ждём семью;
+ * `completed` — семья подтвердила, и только тогда деньги разблокированы
+ * (ADR 0001). Остальные ветки закрытия — disputed и terminatedEarly —
+ * добавляют тикеты 11 и 12.
  */
 export type BookingStatus =
   | "requested"
   | "confirmed"
   | "readyToStart"
   | "inProgress"
+  | "awaitingHandback"
   | "completed"
   | "declined"
   | "cancelled";
@@ -125,6 +126,8 @@ export interface Booking {
   respondedAt?: IsoDateTime;
   cancelledAt?: IsoDateTime;
   startedAt?: IsoDateTime;
+  handbackRequestedAt?: IsoDateTime;
+  completedAt?: IsoDateTime;
   declineReason?: string;
 }
 
@@ -170,7 +173,12 @@ export type DomainEvent =
       photos: string[];
     }
   | { type: "VisitReportSubmitted"; visitId: VisitId }
-  | { type: "VisitReportRead"; visitId: VisitId };
+  | { type: "VisitReportRead"; visitId: VisitId }
+  /** Ситтер заявляет сдачу работы: ключи вернул, визиты закрыл. */
+  | { type: "HandbackRequested"; bookingId: BookingId }
+  /** Семья подтверждает закрытие — единственное событие, которое даёт ситтеру
+   *  доступ к деньгам (ADR 0001). Авто-подтверждение по таймауту — тикет 10. */
+  | { type: "HandbackConfirmed"; bookingId: BookingId };
 
 /**
  * Запись журнала. Отклонённый переход тоже попадает сюда — молча ничего не

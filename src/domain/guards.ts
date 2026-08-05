@@ -31,8 +31,10 @@ export function statusLabel(status: BookingStatus): string {
       return "готова к старту";
     case "inProgress":
       return "в работе";
+    case "awaitingHandback":
+      return "ждёт подтверждения закрытия";
     case "completed":
-      return "опека завершена";
+      return "опека закрыта";
     case "declined":
       return "отклонена";
     case "cancelled":
@@ -54,7 +56,8 @@ export function canCancelBooking(state: DomainState, bookingId: BookingId): Guar
   if (!booking) return deny("Бронь не найдена");
   if (booking.status === "declined") return deny("Ситтер отклонил бронь — отменять нечего");
   if (booking.status === "cancelled") return deny("Бронь уже отменена");
-  if (booking.status === "inProgress") {
+  if (booking.status === "completed") return deny("Опека закрыта — отменять нечего");
+  if (booking.status === "inProgress" || booking.status === "awaitingHandback") {
     return deny("Опека уже началась — нужно досрочное прерывание");
   }
   return allow;
@@ -174,6 +177,12 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
   if (visit.status === "checkedIn") return deny("Приход уже отмечен");
 
   const booking = state.bookings[visit.bookingId];
+  // После заявки на сдачу работы новых визитов быть не может: иначе набор
+  // начислений менялся бы после того, как семья подтвердила сумму.
+  if (booking.status === "awaitingHandback") {
+    return deny("Работа сдана на подтверждение — ключи уже возвращены");
+  }
+  if (booking.status === "completed") return deny("Опека закрыта");
   if (booking.keys.handover.status !== "done") {
     return deny("Передача ключей не подтверждена обеими сторонами — доступа в дом нет");
   }
@@ -206,6 +215,47 @@ export function canSubmitVisitReport(state: DomainState, visitId: VisitId): Guar
   return allow;
 }
 
+// --- Handback ----------------------------------------------------------------
+
+/**
+ * Заявка на сдачу работы. Возврат ключей — такой же двусторонний шаг, как
+ * передача: пока обе стороны его не подтвердили, сдавать нечего. Визиты с
+ * отмеченным приходом должны быть закрыты отчётом до заявки — иначе визит
+ * остался бы без начисления, а деньги уже разблокировались бы.
+ */
+export function canRequestHandback(state: DomainState, bookingId: BookingId): Guard {
+  const booking = state.bookings[bookingId];
+  if (!booking) return deny("Бронь не найдена");
+  if (booking.status === "awaitingHandback") {
+    return deny("Заявка уже отправлена — ждём подтверждения семьи");
+  }
+  if (booking.status === "completed") return deny("Опека уже закрыта");
+  if (booking.status !== "inProgress") {
+    return deny(`Опека ещё не началась: бронь в статусе «${statusLabel(booking.status)}»`);
+  }
+  if (booking.keys.return.status !== "done") {
+    return deny("Возврат ключей не подтверждён обеими сторонами");
+  }
+  const open = Object.values(state.visits).filter(
+    (visit) => visit.bookingId === bookingId && visit.status === "checkedIn",
+  );
+  if (open.length > 0) {
+    return deny(`Сдайте отчёт по визиту, где отмечен приход (${open.length})`);
+  }
+  return allow;
+}
+
+/** Подтверждение семьи — единственная точка разблокировки денег (ADR 0001). */
+export function canConfirmHandback(state: DomainState, bookingId: BookingId): Guard {
+  const booking = state.bookings[bookingId];
+  if (!booking) return deny("Бронь не найдена");
+  if (booking.status === "completed") return deny("Бронь уже закрыта");
+  if (booking.status !== "awaitingHandback") {
+    return deny("Ситтер ещё не заявил сдачу работы");
+  }
+  return allow;
+}
+
 export function canMarkReportRead(state: DomainState, visitId: VisitId): Guard {
   const report = state.reports[visitId];
   if (!report || report.status !== "submitted") return deny("Отчёт ещё не сдан");
@@ -217,5 +267,6 @@ function requireActiveBooking(booking: Booking): Guard {
   if (booking.status === "declined") return deny("Ситтер отклонил бронь");
   if (booking.status === "cancelled") return deny("Бронь отменена");
   if (booking.status === "requested") return deny("Ситтер ещё не принял бронь");
+  if (booking.status === "completed") return deny("Опека закрыта");
   return allow;
 }

@@ -1,35 +1,58 @@
 import { missingReadinessSteps } from "../domain/guards";
 import type { Booking, Role } from "../domain/types";
+import { HandbackPanel } from "./HandbackPanel";
 import { KeyHandoverPanel } from "./KeyHandoverPanel";
 import { MeetGreetPanel } from "./MeetGreetPanel";
 
 /**
- * Шаги, которые бронь проходит до старта опеки. Пока их не пройдут, бронь
- * не уходит в «готова к старту», и в шапке видно, чего именно не хватает.
+ * Весь путь брони одним списком: знакомство и передача ключей до старта,
+ * возврат ключей и сдача работы на закрытии. Пока шаг не пройден, бронь не
+ * двигается дальше, и в шапке видно, чего именно не хватает.
  */
 export function BookingSteps({ booking, role }: { booking: Booking; role: Role }) {
-  const missing = missingReadinessSteps(booking);
-  const active = booking.status === "confirmed" || booking.status === "readyToStart";
-  if (!active && booking.status !== "inProgress") return null;
+  const preparing = booking.status === "confirmed" || booking.status === "readyToStart";
+  const closing =
+    booking.status === "inProgress" ||
+    booking.status === "awaitingHandback" ||
+    booking.status === "completed";
+  if (!preparing && !closing) return null;
+
+  const banner = bannerOf(booking);
 
   return (
     <div className="mt-4 border-t border-stone-200 pt-4">
-      {missing.length > 0 ? (
-        <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          До старта не хватает: {missing.join(", ")}.
-        </p>
-      ) : (
-        <p className="mb-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-          {booking.status === "inProgress"
-            ? "Опека идёт: ключи переданы, знакомство состоялось."
-            : "Всё готово к старту: знакомство состоялось, ключи переданы."}
-        </p>
-      )}
+      <p className={`mb-3 rounded-md px-3 py-2 text-sm ${banner.tone}`}>{banner.text}</p>
 
       <div className="flex flex-col gap-3">
         <MeetGreetPanel booking={booking} role={role} />
         <KeyHandoverPanel booking={booking} role={role} direction="handover" />
+        {closing && (
+          <>
+            <KeyHandoverPanel booking={booking} role={role} direction="return" />
+            <HandbackPanel booking={booking} role={role} />
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+const AMBER = "bg-amber-50 text-amber-900";
+const EMERALD = "bg-emerald-50 text-emerald-900";
+
+function bannerOf(booking: Booking): { tone: string; text: string } {
+  switch (booking.status) {
+    case "awaitingHandback":
+      return { tone: AMBER, text: "Работа сдана — ждём подтверждения семьи." };
+    case "completed":
+      return { tone: EMERALD, text: "Опека закрыта: ключи возвращены, работа принята." };
+    case "inProgress":
+      return { tone: EMERALD, text: "Опека идёт: ключи переданы, знакомство состоялось." };
+    default: {
+      const missing = missingReadinessSteps(booking);
+      return missing.length > 0
+        ? { tone: AMBER, text: `До старта не хватает: ${missing.join(", ")}.` }
+        : { tone: EMERALD, text: "Всё готово к старту: знакомство состоялось, ключи переданы." };
+    }
+  }
 }

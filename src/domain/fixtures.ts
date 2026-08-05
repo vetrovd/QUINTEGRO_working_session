@@ -67,6 +67,50 @@ export function checkedIn(): DomainState {
   return reduce(readyToStart(), { type: "VisitCheckedIn", visitId: TODAY_MORNING }, CTX);
 }
 
+/** Приход отмечен, отчёт заполнен и отправлен — визит завершён и начислен. */
+export function completeVisit(state: DomainState, id: string): DomainState {
+  return run(
+    [
+      { type: "VisitCheckedIn", visitId: id },
+      { type: "VisitReportSaved", visitId: id, tasks: ["feeding"], note: "", photos: [] },
+      { type: "VisitReportSubmitted", visitId: id },
+    ],
+    state,
+  );
+}
+
+/** Ключи возвращены обеими сторонами — можно заявлять сдачу работы. */
+export function keysReturned(state: DomainState): DomainState {
+  return run(
+    [
+      {
+        type: "KeyHandoverProposed",
+        bookingId: BOOKING_ID,
+        direction: "return",
+        by: "sitter",
+        method: "inPerson",
+        meetingAt: NOW,
+      },
+      { type: "KeyHandoverConfirmed", bookingId: BOOKING_ID, direction: "return", by: "family" },
+    ],
+    state,
+  );
+}
+
+/** Один визит завершён, ключи возвращены — всё готово к сдаче работы. */
+export function workDone(): DomainState {
+  return keysReturned(completeVisit(readyToStart(), TODAY_MORNING));
+}
+
+export function handbackRequested(): DomainState {
+  return reduce(workDone(), { type: "HandbackRequested", bookingId: BOOKING_ID }, CTX);
+}
+
+/** Семья подтвердила закрытие: бронь закрыта, деньги разблокированы. */
+export function closed(): DomainState {
+  return reduce(handbackRequested(), { type: "HandbackConfirmed", bookingId: BOOKING_ID }, CTX);
+}
+
 export function booking(state: DomainState) {
   return state.bookings[BOOKING_ID];
 }

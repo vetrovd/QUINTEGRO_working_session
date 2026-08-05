@@ -2,11 +2,13 @@ import {
   canAcceptMeetGreet,
   canCancelBooking,
   canCheckIn,
+  canConfirmHandback,
   canConfirmKeyHandover,
   canMarkMeetGreetHappened,
   canMarkReportRead,
   canProposeKeyHandover,
   canProposeMeetGreet,
+  canRequestHandback,
   canRespondToBooking,
   canSaveVisitReport,
   canSubmitVisitReport,
@@ -240,6 +242,28 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
       const report = state.reports[event.visitId];
       return commit(state, event, ctx, {
         reports: { ...state.reports, [event.visitId]: { ...report, readByFamilyAt: ctx.now } },
+      });
+    }
+
+    case "HandbackRequested": {
+      const guard = canRequestHandback(state, event.bookingId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      return commitBooking(state, event, ctx, {
+        ...state.bookings[event.bookingId],
+        status: "awaitingHandback",
+        handbackRequestedAt: ctx.now,
+      });
+    }
+
+    case "HandbackConfirmed": {
+      const guard = canConfirmHandback(state, event.bookingId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      // Закрытие брони — и есть разблокировка денег: начисления считаются
+      // проекцией, поэтому отдельного события про деньги здесь нет (ADR 0001).
+      return commitBooking(state, event, ctx, {
+        ...state.bookings[event.bookingId],
+        status: "completed",
+        completedAt: ctx.now,
       });
     }
   }

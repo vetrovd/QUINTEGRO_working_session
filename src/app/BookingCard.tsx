@@ -31,8 +31,8 @@ export function BookingCard({
             {formatDateRange(booking.startDate, booking.endDate)}
           </p>
           <p className="text-sm text-stone-500">
-            {days} дн. × {visitsPerDay} визит{visitsPerDay === 1 ? "" : "а"} в день ·{" "}
-            {slotsLabel(booking.slots)}
+            {days} {days === 1 ? "day" : "days"} × {visitsPerDay}{" "}
+            {visitsPerDay === 1 ? "visit" : "visits"} a day · {slotsLabel(booking.slots)}
           </p>
         </div>
         <span
@@ -43,15 +43,15 @@ export function BookingCard({
       </div>
 
       <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-        <Row label="Питомец" value={`${pet.name} — ${pet.species}`} />
-        <Row label="Ставка за визит" value={formatMoney(booking.ratePerVisitMinor)} />
-        <Row label="Семья" value={`${family.name}, ${family.address}`} />
-        <Row label="Ситтер" value={sitter.name} />
+        <Row label="Pet" value={`${pet.name} — ${pet.species}`} />
+        <Row label="Rate per visit" value={formatMoney(booking.ratePerVisitMinor)} />
+        <Row label="Family" value={`${family.name}, ${family.address}`} />
+        <Row label="Sitter" value={sitter.name} />
       </dl>
 
       {booking.declineReason && (
         <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
-          Причина отказа: {booking.declineReason}
+          Reason for declining: {booking.declineReason}
         </p>
       )}
 

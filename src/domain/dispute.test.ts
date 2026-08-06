@@ -21,7 +21,7 @@ import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent } from "./types";
 
-const RATE = 70_000;
+const RATE = 2_000;
 const REASON = "Лоток не убран, воды нет";
 const dispute = (reason = REASON): DomainEvent => ({
   type: "HandbackDisputed",
@@ -35,14 +35,14 @@ describe("семья оспаривает закрытие", () => {
     const state = reduce(workDone(), dispute(), CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Ситтер ещё не заявил сдачу работы");
+    expect(lastRejection(state)).toBe("The sitter hasn't submitted the work yet");
   });
 
   it("спор без причины отклоняется — разбирать было бы нечего", () => {
     const state = reduce(handbackRequested(), dispute("   "), CTX);
 
     expect(booking(state).status).toBe("awaitingHandback");
-    expect(lastRejection(state)).toBe("Опишите, что пошло не так");
+    expect(lastRejection(state)).toBe("Describe what went wrong");
   });
 
   it("спор фиксирует причину и время", () => {
@@ -57,7 +57,7 @@ describe("семья оспаривает закрытие", () => {
     const state = reduce(closed(), dispute(), CTX);
 
     expect(booking(state).status).toBe("completed");
-    expect(lastRejection(state)).toBe("Бронь уже закрыта");
+    expect(lastRejection(state)).toBe("This booking is already closed");
   });
 });
 
@@ -75,7 +75,7 @@ describe("спор не двигает деньги", () => {
 
     expect(guard).toEqual({
       allowed: false,
-      reason: "Деньги за визит заблокированы — семья не подтвердила закрытие брони",
+      reason: "This visit's money is locked — the family hasn't confirmed closing",
     });
   });
 });

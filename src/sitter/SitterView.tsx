@@ -35,17 +35,17 @@ export function SitterView() {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <SectionTitle hint="Даты, слоты, адрес, питомец и ставка — всё, чтобы решить сразу">
-          Входящие запросы
+        <SectionTitle hint="Dates, slots, address, pet and rate — everything you need to decide">
+          Incoming requests
         </SectionTitle>
         {incoming.length === 0 ? (
-          <EmptyState>Новых запросов нет.</EmptyState>
+          <EmptyState>No new requests.</EmptyState>
         ) : (
           <div className="flex flex-col gap-4">
             {incoming.map((booking) => (
               <BookingCard key={booking.id} booking={booking} state={state}>
                 <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-                  <span className="font-medium">Уход: </span>
+                  <span className="font-medium">Care: </span>
                   {state.pets[booking.petId].careNotes}
                 </p>
                 <RespondActions bookingId={booking.id} />
@@ -56,9 +56,9 @@ export function SitterView() {
       </section>
 
       <section>
-        <SectionTitle hint="Согласования до старта опеки и её закрытие">Текущие брони</SectionTitle>
+        <SectionTitle hint="Steps to agree on before care starts, and how it closes">Active bookings</SectionTitle>
         {active.length === 0 ? (
-          <EmptyState>Принятых броней нет.</EmptyState>
+          <EmptyState>No accepted bookings.</EmptyState>
         ) : (
           <div className="flex flex-col gap-4">
             {active.map((booking) => (
@@ -78,7 +78,7 @@ export function SitterView() {
 
       {closed.length > 0 && (
         <section>
-          <SectionTitle>Закрытые</SectionTitle>
+          <SectionTitle>Closed</SectionTitle>
           <div className="flex flex-col gap-4">
             {closed.map((booking) => (
               <BookingCard key={booking.id} booking={booking} state={state}>
@@ -101,12 +101,12 @@ function RespondActions({ bookingId }: { bookingId: BookingId }) {
   return (
     <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-stone-200 pt-4">
       <GuardedButton guard={guard} onClick={() => dispatch({ type: "BookingAccepted", bookingId })}>
-        Принять
+        Accept
       </GuardedButton>
       <input
         type="text"
         value={reason}
-        placeholder="Причина отказа (необязательно)"
+        placeholder="Reason for declining (optional)"
         onChange={(event) => setReason(event.target.value)}
         className={`${inputClass} min-w-56 flex-1`}
       />
@@ -117,7 +117,7 @@ function RespondActions({ bookingId }: { bookingId: BookingId }) {
           dispatch({ type: "BookingDeclined", bookingId, reason: reason.trim() || undefined })
         }
       >
-        Отклонить
+        Decline
       </GuardedButton>
     </div>
   );

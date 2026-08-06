@@ -25,19 +25,19 @@ export function VisitProgress({
   return (
     <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
       <p>
-        Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}
-        {missed.length > 0 && `, не состоялось ${missed.length}`}.
+        Visits: {visited.length} of {visits.length} happened, {reported.length} reports filed
+        {missed.length > 0 && `, ${missed.length} missed`}.
         {last?.checkedInAt && (
           <>
             {" "}
-            Последний — {formatDate(last.date)}, {slotName(last.slot).toLowerCase()}, ситтер на
-            месте с {formatTime(last.checkedInAt)}.
+            Latest — {formatDate(last.date)}, {slotName(last.slot).toLowerCase()}, sitter on site
+            since {formatTime(last.checkedInAt)}.
           </>
         )}
       </p>
       {/* Начислено считается по завершённым визитам, а не по плану периода. */}
       <p className="mt-1 text-stone-600">
-        Начислено за завершённые визиты: {formatMoney(earnedTotalMinor(state, bookingId))} · план{" "}
+        Earned on completed visits: {formatMoney(earnedTotalMinor(state, bookingId))} · planned{" "}
         {formatMoney(plannedTotalMinor(state, bookingId))}
       </p>
     </div>

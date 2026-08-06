@@ -24,7 +24,7 @@ export const bookingRequested: Extract<DomainEvent, { type: "BookingRequested" }
   startDate: TODAY,
   endDate: addDays(TODAY, 4),
   slots: ["morning", "evening"],
-  ratePerVisitMinor: 70_000,
+  ratePerVisitMinor: 2_000,
 };
 
 export function run(events: DomainEvent[], state = createSeedState()): DomainState {

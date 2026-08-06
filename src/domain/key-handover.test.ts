@@ -22,7 +22,7 @@ const proposeKeys = (by: "family" | "sitter") =>
 const confirmKeys = (by: "family" | "sitter") =>
   ({ type: "KeyHandoverConfirmed", bookingId: BOOKING_ID, direction: "handover", by }) as const;
 
-describe("передача ключей", () => {
+describe("the key handoff", () => {
   it("предложение фиксирует способ, время и подтверждение предложившего", () => {
     const state = reduce(confirmed(), proposeKeys("family"), CTX);
 
@@ -54,13 +54,13 @@ describe("передача ключей", () => {
     const state = reduce(proposed, confirmKeys("family"), CTX);
 
     expect(booking(state).keys.handover.status).toBe("proposed");
-    expect(lastRejection(state)).toBe("Вы уже подтвердили передачу");
+    expect(lastRejection(state)).toBe("You've already confirmed this handoff");
   });
 
   it("нельзя подтверждать передачу, которую ещё не предложили", () => {
     expect(canConfirmKeyHandover(confirmed(), BOOKING_ID, "handover", "sitter")).toMatchObject({
       allowed: false,
-      reason: "Сначала согласуйте время и способ передачи",
+      reason: "Agree on a time and method first",
     });
   });
 
@@ -74,7 +74,7 @@ describe("передача ключей", () => {
   it("возврат ключей согласуют только когда опека уже идёт", () => {
     expect(canProposeKeyHandover(confirmed(), BOOKING_ID, "return", "sitter")).toMatchObject({
       allowed: false,
-      reason: "Ключи возвращают в конце опеки",
+      reason: "Keys go back at the end of care",
     });
   });
 });
@@ -84,7 +84,7 @@ describe("гейт готовности брони", () => {
     const state = run([proposeKeys("family"), confirmKeys("sitter")], confirmed());
 
     expect(booking(state).status).toBe("confirmed");
-    expect(missingReadinessSteps(booking(state))).toEqual(["знакомство с семьёй и питомцем"]);
+    expect(missingReadinessSteps(booking(state))).toEqual(["the meet & greet"]);
   });
 
   it("не срабатывает без переданных ключей", () => {
@@ -98,7 +98,7 @@ describe("гейт готовности брони", () => {
     );
 
     expect(booking(state).status).toBe("confirmed");
-    expect(missingReadinessSteps(booking(state))).toEqual(["передача ключей"]);
+    expect(missingReadinessSteps(booking(state))).toEqual(["the key handoff"]);
   });
 
   it("срабатывает, когда состоялось и знакомство, и передача ключей", () => {

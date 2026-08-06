@@ -38,20 +38,20 @@ export function PayoutPanel() {
 
   return (
     <section>
-      <SectionTitle hint="В прототипе вывод мгновенный: запрошен — значит выплачен">
-        Вывод средств
+      <SectionTitle hint="Cash-out is instant in the prototype: requested means paid">
+        Cash out
       </SectionTitle>
 
       {available.length === 0 ? (
         <EmptyState>
-          Выводить пока нечего. Деньги становятся доступными, когда семья подтверждает закрытие
-          брони.
+          Nothing to cash out yet. Money becomes available when the family confirms a booking is
+          closed.
         </EmptyState>
       ) : (
         <Card>
           <p className="mb-2 text-sm text-stone-600">
-            Доступно к выводу — {available.length} визит{available.length === 1 ? "" : "а"}. Снимите
-            галочку, чтобы вывести часть.
+            {available.length} {available.length === 1 ? "visit" : "visits"} available. Uncheck any
+            to cash out only part.
           </p>
           <ul className="flex flex-col divide-y divide-stone-100">
             {available.map((earning) => (
@@ -79,8 +79,9 @@ export function PayoutPanel() {
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-3">
             <p className="text-sm text-stone-600">
-              Выбрано {selected.length} из {available.length} ·{" "}
-              <span className="font-semibold text-stone-900">{formatMoney(totalMinor)}</span> на руки
+              {selected.length} of {available.length} selected ·{" "}
+              <span className="font-semibold text-stone-900">{formatMoney(totalMinor)}</span>{" "}
+              take-home
             </p>
             <GuardedButton
               guard={guard}
@@ -96,7 +97,7 @@ export function PayoutPanel() {
                 setDeselected(new Set());
               }}
             >
-              Вывести {formatMoney(totalMinor)}
+              Cash out {formatMoney(totalMinor)}
             </GuardedButton>
           </div>
         </Card>
@@ -105,7 +106,7 @@ export function PayoutPanel() {
       {history.length > 0 && (
         <div className="mt-4">
           <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
-            История выводов · {history.length}
+            Cash-out history · {history.length}
           </p>
           <div className="flex flex-col gap-3">
             {history.map((record) => (
@@ -115,12 +116,12 @@ export function PayoutPanel() {
                     {formatMoney(record.netMinor)} · {formatDateTime(record.paidAt)}
                   </p>
                   <p className="text-xs text-stone-500 tabular-nums">
-                    {formatMoney(record.grossMinor)} до комиссии, комиссия{" "}
-                    {formatMoney(record.feeMinor)}
+                    {formatMoney(record.grossMinor)} before fees, {formatMoney(record.feeMinor)}{" "}
+                    fee
                   </p>
                 </div>
                 <p className="mt-1 text-sm text-stone-600">
-                  Визиты:{" "}
+                  Visits:{" "}
                   {record.earnings
                     .map(
                       (earning) =>

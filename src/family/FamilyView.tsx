@@ -21,9 +21,9 @@ export function FamilyView() {
       <ReportsFeed />
 
       <section>
-        <SectionTitle hint="Статус виден сразу, как ситтер ответит">Мои брони</SectionTitle>
+        <SectionTitle hint="The status updates the moment the sitter responds">My bookings</SectionTitle>
         {bookings.length === 0 ? (
-          <EmptyState>Броней пока нет. Выберите период в календаре выше.</EmptyState>
+          <EmptyState>No bookings yet. Pick a range in the calendar above.</EmptyState>
         ) : (
           <div className="flex flex-col gap-4">
             {bookings.map((booking) => (
@@ -37,7 +37,7 @@ export function FamilyView() {
                     guard={canCancelBooking(state, booking.id)}
                     onClick={() => dispatch({ type: "BookingCancelled", bookingId: booking.id })}
                   >
-                    Отменить бронь
+                    Cancel booking
                   </GuardedButton>
                 }
               >

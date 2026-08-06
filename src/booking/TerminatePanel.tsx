@@ -20,25 +20,26 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
   if (!terminated && !guard.allowed) return null;
 
   return (
-    <Step title="Досрочное прерывание" state={terminated ? "done" : "todo"}>
+    <Step title="Ending care early" state={terminated ? "done" : "todo"}>
       {terminated ? (
         <StepNote>
-          Опека прервана {booking.terminatedAt && formatDateTime(booking.terminatedAt)} по инициативе{" "}
-          {booking.terminatedBy === "family" ? "семьи" : "ситтера"}
-          {booking.terminationReason && `: «${booking.terminationReason}»`}. Оставшиеся визиты сняты,
-          закрыть бронь всё равно нужно — возврат ключей и сдача работы ниже.
+          Care ended {booking.terminatedAt && formatDateTime(booking.terminatedAt)}, called by{" "}
+          {booking.terminatedBy === "family" ? "the family" : "the sitter"}
+          {booking.terminationReason && `: “${booking.terminationReason}”`}. Remaining visits are
+          dropped, but the booking still has to be closed — key return and handing back the work are
+          below.
         </StepNote>
       ) : (
         <>
           <StepNote>
-            Если опека прекращается раньше срока, оставшиеся визиты снимаются, а начислено будет
-            только за состоявшиеся.
+            If care stops before the end date, the remaining visits are dropped and only the ones
+            that happened are paid for.
           </StepNote>
           <div className="flex flex-wrap items-start gap-3">
             <input
               type="text"
               value={reason}
-              placeholder="Причина (необязательно)"
+              placeholder="Reason (optional)"
               onChange={(event) => setReason(event.target.value)}
               className={`${inputClass} min-w-56 flex-1`}
             />
@@ -54,7 +55,7 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
                 })
               }
             >
-              Прервать опеку
+              End care early
             </GuardedButton>
           </div>
         </>

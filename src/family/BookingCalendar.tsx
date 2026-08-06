@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, countDays, eachDate, parseIsoDate, toIsoDate, today } from "../domain/dates";
-import { formatMoney, rublesToMinor } from "../domain/money";
+import { dollarsToMinor, formatMoney } from "../domain/money";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "../domain/seed";
 import { SLOTS_OF_DAY } from "../domain/types";
 import type { IsoDate, SlotOfDay } from "../domain/types";
@@ -8,7 +8,7 @@ import { useStore } from "../store/StoreProvider";
 import { formatDateRange, slotLabel } from "../app/format";
 import { Card, Field, SectionTitle, inputClass } from "../app/ui";
 
-const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /**
  * Календарь бронирования. Показывает занятые дни, диапазон выбирается двумя
@@ -25,16 +25,16 @@ export function BookingCalendar() {
   const [start, setStart] = useState<IsoDate | null>(currentDate);
   const [end, setEnd] = useState<IsoDate | null>(addDays(currentDate, 4));
   const [slots, setSlots] = useState<SlotOfDay[]>(["morning", "evening"]);
-  const [rateRubles, setRateRubles] = useState(700);
+  const [rateDollars, setRateDollars] = useState(20);
 
   const busyDates = useMemo(() => busyDatesOf(state), [state]);
 
   const days = start && end ? countDays(start, end) : 0;
   const visits = days * slots.length;
-  const totalMinor = visits * rublesToMinor(rateRubles);
+  const totalMinor = visits * dollarsToMinor(rateDollars);
   const overlaps =
     start && end ? eachDate(start, end).some((date) => busyDates.has(date)) : false;
-  const canSubmit = Boolean(start && end && slots.length > 0 && rateRubles > 0 && !overlaps);
+  const canSubmit = Boolean(start && end && slots.length > 0 && rateDollars > 0 && !overlaps);
 
   function pickDate(date: IsoDate) {
     if (!start || (start && end)) {
@@ -68,7 +68,7 @@ export function BookingCalendar() {
       startDate: start,
       endDate: end,
       slots,
-      ratePerVisitMinor: rublesToMinor(rateRubles),
+      ratePerVisitMinor: dollarsToMinor(rateDollars),
     });
     setStart(null);
     setEnd(null);
@@ -76,8 +76,8 @@ export function BookingCalendar() {
 
   return (
     <section>
-      <SectionTitle hint={`Ситтер: ${sitter.name} · питомец: ${pet.name}`}>
-        Календарь бронирования
+      <SectionTitle hint={`Sitter: ${sitter.name} · pet: ${pet.name}`}>
+        Booking calendar
       </SectionTitle>
       <Card>
         <div className="flex items-center justify-between">
@@ -115,7 +115,7 @@ export function BookingCalendar() {
 
         <div className="mt-4 grid gap-4 border-t border-stone-200 pt-4 sm:grid-cols-2">
           <fieldset>
-            <legend className="text-sm font-medium text-stone-700">Визиты в день</legend>
+            <legend className="text-sm font-medium text-stone-700">Visits a day</legend>
             <div className="mt-2 flex flex-wrap gap-3">
               {SLOTS_OF_DAY.map((slot) => (
                 <label key={slot} className="flex items-center gap-2 text-sm">
@@ -130,13 +130,13 @@ export function BookingCalendar() {
               ))}
             </div>
           </fieldset>
-          <Field label="Ставка за визит, ₽">
+          <Field label="Rate per visit, $">
             <input
               type="number"
               min={0}
-              step={50}
-              value={rateRubles}
-              onChange={(event) => setRateRubles(Number(event.target.value))}
+              step={1}
+              value={rateDollars}
+              onChange={(event) => setRateDollars(Number(event.target.value))}
               className={inputClass}
             />
           </Field>
@@ -150,7 +150,7 @@ export function BookingCalendar() {
             onClick={submit}
             className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
           >
-            Отправить запрос
+            Send request
           </button>
         </div>
       </Card>
@@ -158,13 +158,13 @@ export function BookingCalendar() {
   );
 
   function summary() {
-    if (!start) return "Выберите первый день периода";
-    if (!end) return `Начало ${formatDateRange(start, start)} — выберите последний день`;
-    if (overlaps) return "В выбранном периоде есть занятые дни";
-    if (slots.length === 0) return "Выберите хотя бы один визит в день";
+    if (!start) return "Pick the first day of the stay";
+    if (!end) return `Starting ${formatDateRange(start, start)} — pick the last day`;
+    if (overlaps) return "Some days in this range are already booked";
+    if (slots.length === 0) return "Pick at least one visit a day";
     return (
       <>
-        {formatDateRange(start, end)} · {days} дн. · {visits} визитов · план{" "}
+        {formatDateRange(start, end)} · {days} days · {visits} visits ·{" "}
         <strong>{formatMoney(totalMinor)}</strong>
       </>
     );
@@ -202,7 +202,7 @@ function DayCell({
       type="button"
       onClick={onPick}
       disabled={busy || past}
-      title={busy ? "День занят другой бронью" : past ? "День уже прошёл" : undefined}
+      title={busy ? "Taken by another booking" : past ? "This day has passed" : undefined}
       className={`rounded-md py-1.5 text-sm transition disabled:cursor-not-allowed ${tone} ${past && !busy ? "text-stone-300" : ""}`}
     >
       {parseIsoDate(date).getDate()}
@@ -237,15 +237,15 @@ function shiftMonth(month: IsoDate, delta: number): IsoDate {
 }
 
 function monthTitle(month: IsoDate): string {
-  return new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
     parseIsoDate(month),
   );
 }
 
-/** Сетка месяца с понедельника, пустые клетки — null. */
+/** Сетка месяца с воскресенья — неделя на рынке США начинается с него. */
 function monthGrid(month: IsoDate): (IsoDate | null)[] {
   const first = parseIsoDate(month);
-  const lead = (first.getDay() + 6) % 7;
+  const lead = first.getDay();
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
   const cells: (IsoDate | null)[] = Array.from({ length: lead }, () => null);
   for (let day = 1; day <= daysInMonth; day += 1) {

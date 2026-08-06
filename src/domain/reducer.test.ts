@@ -25,7 +25,7 @@ describe("запрос брони", () => {
       petId: SEED_PET_ID,
       startDate: TODAY,
       slots: ["morning", "evening"],
-      ratePerVisitMinor: 70_000,
+      ratePerVisitMinor: 2_000,
     });
   });
 
@@ -96,14 +96,14 @@ describe("отмена семьёй", () => {
     const state = reduce(declined, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
 
     expect(booking(state).status).toBe("declined");
-    expect(lastRejection(state)).toBe("Ситтер отклонил бронь — отменять нечего");
+    expect(lastRejection(state)).toBe("The sitter declined — nothing to cancel");
   });
 
   it("не отменяет бронь дважды", () => {
     const cancelled = reduce(requested(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
     const state = reduce(cancelled, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
 
-    expect(lastRejection(state)).toBe("Бронь уже отменена");
+    expect(lastRejection(state)).toBe("This booking is already canceled");
   });
 });
 

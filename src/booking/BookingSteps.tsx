@@ -48,26 +48,26 @@ const RED = "bg-red-50 text-red-900";
 function bannerOf(booking: Booking): { tone: string; text: string } {
   switch (booking.status) {
     case "awaitingHandback":
-      return { tone: AMBER, text: "Работа сдана — ждём подтверждения семьи." };
+      return { tone: AMBER, text: "Work submitted — waiting on the family to confirm." };
     case "disputed":
       return {
         tone: RED,
-        text: "Открыт спор: бронь не закрыта, деньги ситтера заблокированы до разбора.",
+        text: "A dispute is open: the booking isn’t closed and the sitter’s money is locked until review.",
       };
     case "completed":
-      return { tone: EMERALD, text: "Опека закрыта: ключи возвращены, работа принята." };
+      return { tone: EMERALD, text: "Care is closed: keys returned, work accepted." };
     case "inProgress":
-      return { tone: EMERALD, text: "Опека идёт: ключи переданы, знакомство состоялось." };
+      return { tone: EMERALD, text: "Care is under way: keys handed over, meet & greet done." };
     case "terminatedEarly":
       return {
         tone: AMBER,
-        text: "Опека прервана досрочно — бронь ещё нужно закрыть: вернуть ключи и сдать работу.",
+        text: "Care ended early — the booking still needs closing: return the keys and hand back the work.",
       };
     default: {
       const missing = missingReadinessSteps(booking);
       return missing.length > 0
-        ? { tone: AMBER, text: `До старта не хватает: ${missing.join(", ")}.` }
-        : { tone: EMERALD, text: "Всё готово к старту: знакомство состоялось, ключи переданы." };
+        ? { tone: AMBER, text: `Still missing before care starts: ${missing.join(", ")}.` }
+        : { tone: EMERALD, text: "Ready to start: meet & greet done, keys handed over." };
     }
   }
 }

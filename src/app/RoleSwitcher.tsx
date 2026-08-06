@@ -2,8 +2,8 @@ import { useStore } from "../store/StoreProvider";
 import type { Role } from "../domain/types";
 
 const ROLES: { role: Role; label: string }[] = [
-  { role: "family", label: "Семья" },
-  { role: "sitter", label: "Ситтер" },
+  { role: "family", label: "Family" },
+  { role: "sitter", label: "Sitter" },
 ];
 
 /** Обе роли работают на общих данных: действие одной сразу видно другой. */

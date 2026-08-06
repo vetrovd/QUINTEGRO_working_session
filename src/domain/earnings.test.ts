@@ -19,7 +19,7 @@ import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import { visitId } from "./visits";
 
-const RATE = 70_000;
+const RATE = 2_000;
 
 describe("возникновение начислений", () => {
   it("начислений нет, пока визиты не завершены", () => {

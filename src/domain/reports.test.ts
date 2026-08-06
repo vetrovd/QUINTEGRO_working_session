@@ -36,7 +36,7 @@ describe("черновик отчёта", () => {
   it("нельзя заполнять отчёт до отметки прихода", () => {
     expect(canSaveVisitReport(readyToStart(), TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Сначала отметьте приход на визит",
+      reason: "Check in to the visit first",
     });
 
     const state = reduce(readyToStart(), save(), CTX);
@@ -77,7 +77,7 @@ describe("отправка отчёта", () => {
   it("невозможна без черновика", () => {
     const state = reduce(checkedIn(), submit, CTX);
 
-    expect(lastRejection(state)).toBe("Заполните отчёт перед отправкой");
+    expect(lastRejection(state)).toBe("Fill in the report before sending it");
     expect(state.visits[TODAY_MORNING].status).toBe("checkedIn");
   });
 
@@ -86,7 +86,7 @@ describe("отправка отчёта", () => {
 
     expect(canSubmitVisitReport(empty, TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Отметьте выполненные задачи, приложите фото или напишите заметку",
+      reason: "Check off what you did, add a photo, or write a note",
     });
   });
 
@@ -106,14 +106,14 @@ describe("неизменяемость отправленного отчёта",
     const state = reduce(submitted, save({ note: "Задним числом" }), CTX);
 
     expect(report(state).note).toBe("Барсик поел, вылез из-под дивана");
-    expect(lastRejection(state)).toBe("Отчёт отправлен — изменить его нельзя");
+    expect(lastRejection(state)).toBe("The report is sent — it can't be changed");
   });
 
   it("повторная отправка отклоняется", () => {
     const submitted = run([save(), submit], checkedIn());
     const state = reduce(submitted, submit, CTX);
 
-    expect(lastRejection(state)).toBe("Отчёт отправлен — изменить его нельзя");
+    expect(lastRejection(state)).toBe("The report is sent — it can't be changed");
   });
 
   it("завершённый визит нельзя отметить пришедшим заново", () => {
@@ -121,7 +121,7 @@ describe("неизменяемость отправленного отчёта",
     const state = reduce(submitted, { type: "VisitCheckedIn", visitId: TODAY_MORNING }, CTX);
 
     expect(state.visits[TODAY_MORNING].status).toBe("completed");
-    expect(lastRejection(state)).toBe("Визит уже завершён");
+    expect(lastRejection(state)).toBe("This visit is already done");
   });
 });
 
@@ -152,13 +152,13 @@ describe("лента семьи", () => {
 
     expect(canMarkReportRead(draft, TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Отчёт ещё не сдан",
+      reason: "The report isn't filed yet",
     });
 
     const read = run([submit, markRead], draft);
     const again = reduce(read, markRead, CTX);
 
-    expect(lastRejection(again)).toBe("Отчёт уже прочитан");
+    expect(lastRejection(again)).toBe("This report is already read");
   });
 
   it("визит без сданного отчёта остаётся в списке ожидающих", () => {

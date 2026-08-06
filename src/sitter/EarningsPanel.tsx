@@ -7,9 +7,9 @@ import { formatDate, slotName } from "../app/format";
 import { Card, EmptyState, SectionTitle } from "../app/ui";
 
 const PARTS: { status: EarningStatus; label: string; dot: string }[] = [
-  { status: "locked", label: "Заблокировано", dot: "bg-amber-500" },
-  { status: "available", label: "Доступно к выводу", dot: "bg-emerald-500" },
-  { status: "paidOut", label: "Выведено", dot: "bg-stone-400" },
+  { status: "locked", label: "Locked", dot: "bg-amber-500" },
+  { status: "available", label: "Available to cash out", dot: "bg-emerald-500" },
+  { status: "paidOut", label: "Cashed out", dot: "bg-stone-400" },
 ];
 
 /**
@@ -27,13 +27,11 @@ export function EarningsPanel() {
 
   return (
     <section>
-      <SectionTitle hint={`Комиссия платформы — ${feeRateLabel} от суммы визита`}>
-        Заработок
-      </SectionTitle>
+      <SectionTitle hint={`Platform fee — ${feeRateLabel} of each visit`}>Earnings</SectionTitle>
 
       {!hasEarnings ? (
         <EmptyState>
-          Начислений пока нет. Они появляются за каждый визит со сданным отчётом.
+          No earnings yet. One shows up for every visit with a filed report.
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
@@ -53,15 +51,15 @@ export function EarningsPanel() {
               друга. */}
           {balance.locked.count - disputedLocked > 0 && (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              Заблокированное разблокируется, когда семья подтвердит закрытие брони. До этого
-              вывести его нельзя.
+              Locked money unlocks when the family confirms the booking is closed. Until then it
+              can’t be cashed out.
             </p>
           )}
 
           {disputedLocked > 0 && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
-              Заблокировано по спору: визитов {disputedLocked}. Семья оспорила закрытие, и эти
-              деньги останутся заблокированными до разбора.
+              Locked by a dispute: {disputedLocked} visits. The family disputed the closing, and
+              this money stays locked until it’s reviewed.
             </p>
           )}
 
@@ -92,12 +90,10 @@ function StatTile({ label, dot, bucket }: { label: string; dot: string; bucket: 
         {formatMoney(bucket.netMinor)}
       </p>
       <p className="mt-1 text-xs text-stone-500">
-        на руки · {formatMoney(bucket.grossMinor)} до комиссии, комиссия{" "}
-        {formatMoney(bucket.feeMinor)}
+        take-home · {formatMoney(bucket.grossMinor)} before fees, {formatMoney(bucket.feeMinor)}{" "}
+        fee
       </p>
-      <p className="mt-2 text-xs text-stone-500">
-        визитов: {bucket.count}
-      </p>
+      <p className="mt-2 text-xs text-stone-500">visits: {bucket.count}</p>
     </Card>
   );
 }
@@ -106,16 +102,16 @@ function Breakdown({ label, items }: { label: string; items: Earning[] }) {
   return (
     <div>
       <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
-        {label} · разбивка по визитам
+        {label} · visit by visit
       </p>
       <Card>
         <table className="w-full text-sm tabular-nums">
           <thead>
             <tr className="text-left text-xs text-stone-500">
-              <th className="pb-1 font-medium">Визит</th>
-              <th className="pb-1 text-right font-medium">До комиссии</th>
-              <th className="pb-1 text-right font-medium">Комиссия</th>
-              <th className="pb-1 text-right font-medium">На руки</th>
+              <th className="pb-1 font-medium">Visit</th>
+              <th className="pb-1 text-right font-medium">Before fees</th>
+              <th className="pb-1 text-right font-medium">Fee</th>
+              <th className="pb-1 text-right font-medium">Take-home</th>
             </tr>
           </thead>
           <tbody>

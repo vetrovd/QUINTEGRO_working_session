@@ -8,22 +8,23 @@ export function createSeedState(): DomainState {
     families: {
       "family-1": {
         id: "family-1",
-        name: "Ивановы",
-        address: "Малая Бронная, 14, кв. 37",
+        name: "The Bennetts",
+        address: "1847 Valencia St, Apt 3B, San Francisco, CA 94110",
       },
     },
     sitters: {
-      "sitter-1": { id: "sitter-1", name: "Марина Соколова" },
+      "sitter-1": { id: "sitter-1", name: "Nora Alvarez" },
     },
     pets: {
       "pet-1": {
         id: "pet-1",
         familyId: "family-1",
-        name: "Барсик",
-        species: "Кот, 4 года",
+        name: "Biscuit",
+        species: "Cat, 4 years old",
         careNotes:
-          "Сухой корм дважды в день, по 40 г. Вода — менять целиком. Лоток убрать каждый визит. " +
-          "Капли от аллергии утром, флакон на кухонной полке. Прячется под диваном от незнакомых.",
+          "Dry food twice a day, 1.5 oz per meal. Replace the water entirely, don't top it up. " +
+          "Scoop the litter box every visit. Allergy drops in the morning — bottle is on the " +
+          "kitchen shelf. Hides under the couch around strangers.",
         careTasks: ["feeding", "water", "litter", "meds"],
       },
     },

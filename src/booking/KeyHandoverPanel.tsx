@@ -37,7 +37,7 @@ export function KeyHandoverPanel({
   const [meetingAt, setMeetingAt] = useState(() => toDateTimeInput(now));
   const [details, setDetails] = useState("");
 
-  const title = direction === "handover" ? "Передача ключей" : "Возврат ключей";
+  const title = direction === "handover" ? "Key handoff" : "Key return";
   const proposeGuard = canProposeKeyHandover(state, booking.id, direction, role);
   const confirmGuard = canConfirmKeyHandover(state, booking.id, direction, role);
   const awaiting = awaitingConfirmationFrom(booking, direction);
@@ -47,8 +47,8 @@ export function KeyHandoverPanel({
       <Step title={title} state="done">
         <StepNote>
           {handover.method && methodLabel(handover.method)}
-          {handover.meetingAt && `, ${formatDateTime(handover.meetingAt)}`} — подтверждено обеими
-          сторонами.
+          {handover.meetingAt && `, ${formatDateTime(handover.meetingAt)}`} — confirmed by both
+          sides.
         </StepNote>
       </Step>
     );
@@ -64,8 +64,8 @@ export function KeyHandoverPanel({
             {handover.details && ` — ${handover.details}`}
           </StepNote>
           <StepNote>
-            <strong>Ждём подтверждения {awaitingLabel(awaiting)}.</strong> Пока подтвердила одна
-            сторона, передача не считается состоявшейся.
+            <strong>Waiting on {awaitingLabel(awaiting)} to confirm.</strong> With only one side
+            confirmed, the handoff hasn’t happened.
           </StepNote>
         </>
       )}
@@ -78,13 +78,13 @@ export function KeyHandoverPanel({
               dispatch({ type: "KeyHandoverConfirmed", bookingId: booking.id, direction, by: role })
             }
           >
-            Подтвердить передачу
+            Confirm the handoff
           </GuardedButton>
         )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Способ">
+        <Field label="Method">
           <select
             value={method}
             onChange={(event) => setMethod(event.target.value as KeyHandoverMethod)}
@@ -97,7 +97,7 @@ export function KeyHandoverPanel({
             ))}
           </select>
         </Field>
-        <Field label="Когда">
+        <Field label="When">
           <input
             type="datetime-local"
             value={meetingAt}
@@ -105,11 +105,11 @@ export function KeyHandoverPanel({
             className={inputClass}
           />
         </Field>
-        <Field label="Где / детали">
+        <Field label="Where / details">
           <input
             type="text"
             value={details}
-            placeholder="Например: лок-бокс на калитке"
+            placeholder="e.g. lockbox on the gate"
             onChange={(event) => setDetails(event.target.value)}
             className={inputClass}
           />
@@ -132,7 +132,7 @@ export function KeyHandoverPanel({
             })
           }
         >
-          {handover.status === "proposed" ? "Предложить другой вариант" : "Предложить передачу"}
+          {handover.status === "proposed" ? "Propose something else" : "Propose a handoff"}
         </GuardedButton>
       </div>
     </Step>

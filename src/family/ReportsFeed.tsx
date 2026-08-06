@@ -24,12 +24,12 @@ export function ReportsFeed() {
 
   return (
     <section>
-      <SectionTitle hint="Прочтение отчёта ни к чему вас не обязывает и не влияет на оплату">
-        Отчёты о визитах{unread > 0 && ` · ${unread} новых`}
+      <SectionTitle hint="Reading a report commits you to nothing and doesn’t affect payment">
+        Visit reports{unread > 0 && ` · ${unread} new`}
       </SectionTitle>
 
       {timeline.length === 0 ? (
-        <EmptyState>Отчётов пока нет. Они появятся, когда ситтер начнёт визиты.</EmptyState>
+        <EmptyState>No reports yet. They’ll show up once the sitter starts visiting.</EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           {timeline.map((visit) =>
@@ -58,17 +58,17 @@ function MissedCard({ state, visitId }: { state: DomainState; visitId: string })
             {formatDateWithWeekday(visit.date)} · {slotLabel(visit.slot)}
           </p>
           <p className="text-sm text-stone-500">
-            {pet.name} · отмечено {visit.missedAt && formatDateTime(visit.missedAt)}
+            {pet.name} · marked {visit.missedAt && formatDateTime(visit.missedAt)}
           </p>
         </div>
         <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-900">
-          Не состоялся
+          Missed
         </span>
       </div>
 
       <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
-        Ситтер отметил, что визит не состоялся
-        {visit.missedReason && `: «${visit.missedReason}»`}. Этот визит не будет оплачен.
+        The sitter marked this visit as missed
+        {visit.missedReason && `: “${visit.missedReason}”`}. It won’t be paid for.
       </p>
     </Card>
   );
@@ -89,12 +89,12 @@ function ReportCard({ state, visitId }: { state: DomainState; visitId: string })
             {formatDateWithWeekday(visit.date)} · {slotLabel(visit.slot)}
           </p>
           <p className="text-sm text-stone-500">
-            {pet.name} · отчёт сдан {report.submittedAt && formatDateTime(report.submittedAt)}
+            {pet.name} · report filed {report.submittedAt && formatDateTime(report.submittedAt)}
           </p>
         </div>
         {unread && (
           <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900">
-            Новое
+            New
           </span>
         )}
       </div>
@@ -128,7 +128,7 @@ function ReportCard({ state, visitId }: { state: DomainState; visitId: string })
             <img
               key={photo.slice(-24)}
               src={photo}
-              alt={`${pet.name}, фото ${index + 1}`}
+              alt={`${pet.name}, photo ${index + 1}`}
               className="h-32 rounded-md object-cover"
             />
           ))}
@@ -142,11 +142,11 @@ function ReportCard({ state, visitId }: { state: DomainState; visitId: string })
             guard={canMarkReportRead(state, visitId)}
             onClick={() => dispatch({ type: "VisitReportRead", visitId })}
           >
-            Отметить прочитанным
+            Mark as read
           </GuardedButton>
         ) : (
           <p className="text-xs text-stone-500">
-            Прочитано {report.readByFamilyAt && formatDateTime(report.readByFamilyAt)}
+            Read {report.readByFamilyAt && formatDateTime(report.readByFamilyAt)}
           </p>
         )}
       </div>

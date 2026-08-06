@@ -24,23 +24,24 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
 
   return (
     <Step
-      title="Сдача работы"
+      title="Handing back the work"
       state={disputed ? "blocked" : closed ? "done" : awaiting ? "waiting" : "todo"}
     >
       <StepNote>
-        Визитов состоялось {summary.completed} из {summary.planned} по плану периода
-        {summary.missed > 0 && `, не состоялось ${summary.missed}`}
-        {summary.cancelled > 0 && `, снято прерыванием ${summary.cancelled}`}
-        {summary.unaccounted > 0 && `, без отметки ${summary.unaccounted}`}.{" "}
+        {summary.completed} of {summary.planned} planned visits happened
+        {summary.missed > 0 && `, ${summary.missed} missed`}
+        {summary.cancelled > 0 && `, ${summary.cancelled} dropped by the early end`}
+        {summary.unaccounted > 0 && `, ${summary.unaccounted} unaccounted for`}.{" "}
         {role === "family" ? (
           <>
-            К оплате — <strong>{formatMoney(summary.grossMinor)}</strong>: только за визиты со
-            сданным отчётом.
+            Due — <strong>{formatMoney(summary.grossMinor)}</strong>: only for visits with a filed
+            report.
           </>
         ) : (
           <>
-            К начислению — <strong>{formatMoney(summary.netMinor)}</strong> на руки (
-            {formatMoney(summary.grossMinor)} до комиссии, комиссия {formatMoney(summary.feeMinor)}).
+            You’ll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
+            {formatMoney(summary.grossMinor)} before fees, {formatMoney(summary.feeMinor)} platform
+            fee).
           </>
         )}
       </StepNote>
@@ -48,25 +49,26 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
       {disputed && (
         <div className="rounded-md bg-red-50 px-3 py-2 text-red-900">
           <p>
-            <strong>Семья оспорила закрытие</strong>
-            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: «
-            {booking.disputeReason}».
+            <strong>The family disputed the closing</strong>
+            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: “
+            {booking.disputeReason}”.
           </p>
           {/* Тупик показан честно: роли, которая разбирает спор, в прототипе нет. */}
           <p className="mt-1">
-            Деньги ситтера остаются заблокированными до разбора. Разбор — участие поддержки, которой
-            в прототипе нет, поэтому дальше бронь не двигается: это край модели, а не ошибка.
+            The sitter’s money stays locked until this is reviewed. Review means a support role the
+            prototype doesn’t have, so the booking goes no further: this is the edge of the model,
+            not a bug.
           </p>
         </div>
       )}
 
       {closed && (
         <StepNote>
-          Бронь закрыта{booking.completedAt && ` ${formatDateTime(booking.completedAt)}`}
+          Booking closed{booking.completedAt && ` ${formatDateTime(booking.completedAt)}`}
           {booking.closedBy === "timeout"
-            ? `: семья не ответила за ${HANDBACK_WINDOW_HOURS} ч, молчание считается согласием`
-            : " подтверждением семьи"}{" "}
-          — деньги ситтера разблокированы.
+            ? `: the family didn’t respond within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
+            : " by the family’s confirmation"}{" "}
+          — the sitter’s money is unlocked.
         </StepNote>
       )}
 
@@ -77,17 +79,17 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
               <StepNote>
                 <strong>
                   {role === "family"
-                    ? "Ситтер заявил сдачу работы — ждём вашего подтверждения."
-                    : "Ждём подтверждения семьи."}
+                    ? "The sitter submitted the work — waiting on your confirmation."
+                    : "Waiting on the family to confirm."}
                 </strong>{" "}
-                Подтверждение закрывает бронь и разблокирует выплату ситтеру.
+                Confirming closes the booking and unlocks the sitter’s payout.
               </StepNote>
               {/* Молчание семьи — тоже согласие: иначе бронь висит незакрытой,
                   а ситтер остаётся без денег (ADR 0001). */}
               <StepNote>
                 {role === "family"
-                  ? `Если не ответить, бронь закроется сама через ${formatDuration(timeLeftMs)} — молчание считается согласием.`
-                  : `Если семья не ответит, бронь закроется сама через ${formatDuration(timeLeftMs)}, и деньги разблокируются.`}
+                  ? `If you don’t respond, the booking closes itself in ${formatDuration(timeLeftMs)} — silence counts as agreement.`
+                  : `If the family doesn’t respond, the booking closes itself in ${formatDuration(timeLeftMs)} and the money unlocks.`}
               </StepNote>
             </>
           )}
@@ -98,7 +100,7 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
                 guard={canRequestHandback(state, booking.id)}
                 onClick={() => dispatch({ type: "HandbackRequested", bookingId: booking.id })}
               >
-                Сдать работу
+                Hand back the work
               </GuardedButton>
             </div>
           ) : (
@@ -107,12 +109,12 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
                 guard={canConfirmHandback(state, booking.id)}
                 onClick={() => dispatch({ type: "HandbackConfirmed", bookingId: booking.id })}
               >
-                Подтвердить закрытие
+                Confirm closing
               </GuardedButton>
               <input
                 type="text"
                 value={reason}
-                placeholder="Что пошло не так"
+                placeholder="What went wrong"
                 onChange={(event) => setReason(event.target.value)}
                 className={`${inputClass} min-w-56 flex-1`}
               />
@@ -123,7 +125,7 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
                   dispatch({ type: "HandbackDisputed", bookingId: booking.id, reason })
                 }
               >
-                Оспорить
+                Dispute
               </GuardedButton>
             </div>
           )}

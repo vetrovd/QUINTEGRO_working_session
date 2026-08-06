@@ -48,7 +48,7 @@ describe("знакомство", () => {
     const state = reduce(proposed, { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "family" }, CTX);
 
     expect(booking(state).meetGreet.status).toBe("proposed");
-    expect(lastRejection(state)).toBe("Своё же предложение принять нельзя");
+    expect(lastRejection(state)).toBe("You can't accept your own proposal");
   });
 
   it("нельзя дважды подряд предложить время со своей стороны", () => {
@@ -63,7 +63,7 @@ describe("знакомство", () => {
     const tooEarly = reduce(proposed, { type: "MeetGreetHappened", bookingId: BOOKING_ID }, CTX);
 
     expect(booking(tooEarly).meetGreet.status).toBe("proposed");
-    expect(lastRejection(tooEarly)).toBe("Сначала согласуйте время знакомства");
+    expect(lastRejection(tooEarly)).toBe("Agree on a time first");
 
     const accepted = reduce(proposed, { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "sitter" }, CTX);
     const happened = reduce(accepted, { type: "MeetGreetHappened", bookingId: BOOKING_ID }, CTX);
@@ -75,7 +75,7 @@ describe("знакомство", () => {
     const state = reduce(requested(), propose("family"), CTX);
 
     expect(booking(state).meetGreet.status).toBe("none");
-    expect(lastRejection(state)).toBe("Ситтер ещё не принял бронь");
+    expect(lastRejection(state)).toBe("The sitter hasn't accepted yet");
   });
 });
 

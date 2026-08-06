@@ -17,8 +17,10 @@ import type { DomainEvent, DomainState, IsoDateTime, Role } from "../domain/type
 
 const STORAGE_KEY = "pet-sitting-prototype";
 /** Поднимать при любом изменении формы DomainState — иначе старое состояние
- *  загрузится как валидное и упадёт на отсутствующей коллекции. */
-const STORAGE_VERSION = 4;
+ *  загрузится как валидное и упадёт на отсутствующей коллекции. Версия 5 —
+ *  смена рынка: сид-данные и валюта лежат в сохранённом состоянии, и без
+ *  подъёма версии у всех, кто уже открывал демку, остались бы рубли. */
+const STORAGE_VERSION = 5;
 const REQUIRED_COLLECTIONS = [
   "families",
   "sitters",

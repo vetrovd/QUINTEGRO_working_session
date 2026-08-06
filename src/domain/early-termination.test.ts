@@ -26,7 +26,7 @@ import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
 import { visitId, visitsOfBooking } from "./visits";
 
-const RATE = 70_000;
+const RATE = 2_000;
 const TOMORROW_MORNING = visitId(BOOKING_ID, addDays(TODAY, 1), "morning");
 
 const missed = (id: string, reason?: string): DomainEvent => ({
@@ -74,7 +74,7 @@ describe("пропущенный визит", () => {
     const state = reduce(working(), missed(TODAY_MORNING), CTX);
 
     expect(state.visits[TODAY_MORNING].status).toBe("completed");
-    expect(lastRejection(state)).toBe("Отчёт по визиту сдан — визит состоялся");
+    expect(lastRejection(state)).toBe("The report is filed — this visit happened");
   });
 
   it("ошибочно отмеченный приход можно признать пропуском — иначе бронь не закрыть", () => {
@@ -91,7 +91,7 @@ describe("пропущенный визит", () => {
     const state = reduce(handbackRequested(), missed(TODAY_EVENING), CTX);
 
     expect(state.visits[TODAY_EVENING].status).toBe("scheduled");
-    expect(lastRejection(state)).toBe("Работа уже сдана на подтверждение");
+    expect(lastRejection(state)).toBe("The work has already been submitted for confirmation");
   });
 
   it("в закрытой броне и в споре пропуск не отметить", () => {
@@ -109,7 +109,7 @@ describe("досрочное прерывание", () => {
     const state = reduce(readyToStart(), terminate(), CTX);
 
     expect(booking(state).status).toBe("readyToStart");
-    expect(lastRejection(state)).toBe("Опека ещё не началась — бронь можно просто отменить");
+    expect(lastRejection(state)).toBe("Care hasn't started yet — you can simply cancel the booking");
   });
 
   it("фиксирует, кто прервал и почему", () => {
@@ -140,7 +140,7 @@ describe("досрочное прерывание", () => {
   it("повторное прерывание отклоняется", () => {
     const state = reduce(reduce(working(), terminate(), CTX), terminate(), CTX);
 
-    expect(lastRejection(state)).toBe("Опека уже прервана");
+    expect(lastRejection(state)).toBe("Care has already been ended early");
   });
 });
 

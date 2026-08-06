@@ -12,22 +12,22 @@ import type {
 } from "../domain/types";
 
 const SLOT_LABELS: Record<SlotOfDay, string> = {
-  morning: "Утро",
-  midday: "День",
-  evening: "Вечер",
+  morning: "Morning",
+  midday: "Midday",
+  evening: "Evening",
 };
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
-  requested: "Ожидает ответа",
-  confirmed: "Принята",
-  readyToStart: "Готова к старту",
-  inProgress: "Опека идёт",
-  terminatedEarly: "Прервана досрочно",
-  awaitingHandback: "Ждёт подтверждения закрытия",
-  completed: "Опека закрыта",
-  disputed: "Спор",
-  declined: "Отклонена",
-  cancelled: "Отменена",
+  requested: "Awaiting response",
+  confirmed: "Accepted",
+  readyToStart: "Ready to start",
+  inProgress: "Care in progress",
+  terminatedEarly: "Ended early",
+  awaitingHandback: "Awaiting your confirmation",
+  completed: "Closed",
+  disputed: "Disputed",
+  declined: "Declined",
+  cancelled: "Canceled",
 };
 
 const STATUS_TONES: Record<BookingStatus, string> = {
@@ -44,54 +44,54 @@ const STATUS_TONES: Record<BookingStatus, string> = {
 };
 
 const METHOD_LABELS: Record<KeyHandoverMethod, string> = {
-  inPerson: "Личная встреча",
-  lockbox: "Лок-бокс",
-  doorCode: "Код домофона",
+  inPerson: "In person",
+  lockbox: "Lockbox",
+  doorCode: "Door code",
 };
 
 const VISIT_LABELS: Record<VisitStatus, string> = {
-  scheduled: "Запланирован",
-  checkedIn: "Ситтер на месте",
-  completed: "Отчёт сдан",
-  missed: "Не состоялся",
-  cancelled: "Отменён",
+  scheduled: "Scheduled",
+  checkedIn: "Sitter on site",
+  completed: "Report filed",
+  missed: "Missed",
+  cancelled: "Canceled",
 };
 
 const CARE_TASK_LABELS: Record<CareTask, string> = {
-  feeding: "Кормление",
-  water: "Свежая вода",
-  litter: "Лоток",
-  walk: "Прогулка",
-  meds: "Медикаменты",
+  feeding: "Feeding",
+  water: "Fresh water",
+  litter: "Litter box",
+  walk: "Walk",
+  meds: "Medication",
 };
 
 const ROLE_LABELS: Record<Role, string> = {
-  family: "семьи",
-  sitter: "ситтера",
+  family: "the family",
+  sitter: "the sitter",
 };
 
-/** Журнал прототипа: событие домена по-русски. */
+/** Журнал прототипа: событие домена человеческим языком. */
 const EVENT_LABELS: Record<DomainEvent["type"], string> = {
-  BookingRequested: "Семья отправила запрос на бронь",
-  BookingAccepted: "Ситтер принял бронь",
-  BookingDeclined: "Ситтер отклонил бронь",
-  BookingCancelled: "Бронь отменена",
-  MeetGreetProposed: "Предложено время знакомства",
-  MeetGreetAccepted: "Время знакомства принято",
-  MeetGreetHappened: "Знакомство состоялось",
-  KeyHandoverProposed: "Предложена передача ключей",
-  KeyHandoverConfirmed: "Передача ключей подтверждена",
-  VisitCheckedIn: "Ситтер отметил приход",
-  VisitReportSaved: "Отчёт сохранён",
-  VisitReportSubmitted: "Отчёт сдан",
-  VisitReportRead: "Семья прочитала отчёт",
-  VisitMissed: "Визит не состоялся",
-  BookingTerminatedEarly: "Опека прервана досрочно",
-  HandbackRequested: "Ситтер заявил сдачу работы",
-  HandbackConfirmed: "Семья подтвердила закрытие",
-  HandbackAutoConfirmed: "Закрытие по молчанию семьи",
-  HandbackDisputed: "Семья оспорила закрытие",
-  PayoutRequested: "Ситтер вывел деньги",
+  BookingRequested: "Family sent a booking request",
+  BookingAccepted: "Sitter accepted the booking",
+  BookingDeclined: "Sitter declined the booking",
+  BookingCancelled: "Booking canceled",
+  MeetGreetProposed: "Meet & greet time proposed",
+  MeetGreetAccepted: "Meet & greet time accepted",
+  MeetGreetHappened: "Meet & greet took place",
+  KeyHandoverProposed: "Key handoff proposed",
+  KeyHandoverConfirmed: "Key handoff confirmed",
+  VisitCheckedIn: "Sitter checked in",
+  VisitReportSaved: "Report saved",
+  VisitReportSubmitted: "Report filed",
+  VisitReportRead: "Family read the report",
+  VisitMissed: "Visit missed",
+  BookingTerminatedEarly: "Care ended early",
+  HandbackRequested: "Sitter submitted the work",
+  HandbackConfirmed: "Family confirmed closing",
+  HandbackAutoConfirmed: "Closed automatically — family stayed silent",
+  HandbackDisputed: "Family disputed the closing",
+  PayoutRequested: "Sitter cashed out",
 };
 
 export function eventLabel(event: DomainEvent): string {
@@ -103,9 +103,9 @@ export function formatDuration(ms: number): string {
   const minutes = Math.max(0, Math.floor(ms / 60_000));
   const days = Math.floor(minutes / (24 * 60));
   const hours = Math.floor((minutes % (24 * 60)) / 60);
-  if (days > 0) return `${days} д ${hours} ч`;
-  if (hours > 0) return `${hours} ч ${minutes % 60} мин`;
-  return `${minutes} мин`;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes % 60}m`;
+  return `${minutes}m`;
 }
 
 export function slotLabel(slot: SlotOfDay): string {
@@ -141,22 +141,22 @@ export function careTaskLabel(task: CareTask): string {
 }
 
 export function awaitingLabel(roles: Role[]): string {
-  return roles.map((role) => ROLE_LABELS[role]).join(" и ");
+  return roles.map((role) => ROLE_LABELS[role]).join(" and ");
 }
 
-const dayMonth = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" });
-const dayMonthWeekday = new Intl.DateTimeFormat("ru-RU", {
-  day: "numeric",
-  month: "long",
+const dayMonth = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
+const dayMonthWeekday = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
-});
-const dayMonthTime = new Intl.DateTimeFormat("ru-RU", {
+  month: "short",
   day: "numeric",
-  month: "long",
-  hour: "2-digit",
+});
+const dayMonthTime = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
   minute: "2-digit",
 });
-const timeOnly = new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" });
+const timeOnly = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
 
 export function formatDate(date: IsoDate): string {
   return dayMonth.format(parseIsoDate(date));

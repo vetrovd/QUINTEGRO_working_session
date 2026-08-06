@@ -29,36 +29,36 @@ export function VisitSchedule() {
     // Просроченные идут первыми: день прошёл, а визит не закрыт ни отчётом, ни
     // пропуском — раньше такие визиты просто исчезали из расписания.
     {
-      title: "Просрочены",
-      hint: "День прошёл, визит не закрыт",
+      title: "Overdue",
+      hint: "The day has passed and the visit isn’t closed",
       items: upcoming.filter((visit) => visit.date < currentDate),
     },
     {
-      title: "Ждут отчёта",
-      hint: "Приход отмечен, отчёт ещё не сдан",
+      title: "Awaiting a report",
+      hint: "Checked in, report not filed yet",
       items: visits.filter((visit) => visit.status === "checkedIn"),
     },
-    { title: "Сегодня", items: upcoming.filter((visit) => visit.date === currentDate) },
+    { title: "Today", items: upcoming.filter((visit) => visit.date === currentDate) },
     {
-      title: "Неделя вперёд",
+      title: "Week ahead",
       items: upcoming.filter((visit) => visit.date > currentDate && visit.date <= weekEnd),
     },
-    { title: "Позже", items: upcoming.filter((visit) => visit.date > weekEnd) },
-    { title: "Отчёт сдан", items: visits.filter((visit) => visit.status === "completed") },
+    { title: "Later", items: upcoming.filter((visit) => visit.date > weekEnd) },
+    { title: "Report filed", items: visits.filter((visit) => visit.status === "completed") },
     {
-      title: "Не состоялись",
-      hint: "Начисления по ним нет",
+      title: "Missed",
+      hint: "No earnings from these",
       items: visits.filter((visit) => visit.status === "missed"),
     },
   ].filter((group) => group.items.length > 0);
 
   return (
     <section>
-      <SectionTitle hint="Инструкции по питомцу — в карточке визита, искать в переписке не нужно">
-        Расписание визитов
+      <SectionTitle hint="Pet instructions live on the visit card — no digging through messages">
+        Visit schedule
       </SectionTitle>
       {visits.length === 0 ? (
-        <EmptyState>Визитов нет. Они появятся, когда вы примете бронь.</EmptyState>
+        <EmptyState>No visits yet. They appear once you accept a booking.</EmptyState>
       ) : (
         <div className="flex flex-col gap-5">
           {groups.map((group) => (
@@ -103,22 +103,22 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
         </div>
         {visit.checkedInAt && (
           <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">
-            На месте с {formatTime(visit.checkedInAt)}
+            On site since {formatTime(visit.checkedInAt)}
           </span>
         )}
       </div>
 
       {!completed && !missed && (
         <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-          <span className="font-medium">Уход: </span>
+          <span className="font-medium">Care: </span>
           {pet.careNotes}
         </p>
       )}
 
       {missed && (
         <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
-          Визит не состоялся{visit.missedReason && `: «${visit.missedReason}»`}. Начисления по нему
-          нет, семья видит это в ленте.
+          Visit missed{visit.missedReason && `: “${visit.missedReason}”`}. No earnings from it, and
+          the family sees this in their feed.
         </p>
       )}
 
@@ -128,7 +128,7 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
             guard={canCheckIn(state, visit.id, now)}
             onClick={() => dispatch({ type: "VisitCheckedIn", visitId: visit.id })}
           >
-            Отметить приход
+            Check in
           </GuardedButton>
           <MissedAction visit={visit} state={state} reason={missedReason} onReason={setMissedReason} />
         </div>
@@ -151,9 +151,9 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
 
       {completed && report && (
         <p className="mt-3 text-sm text-stone-600">
-          Отчёт отправлен: {report.tasks.map(careTaskLabel).join(", ") || "без задач"}
-          {report.photos.length > 0 && `, фото — ${report.photos.length}`}.
-          {report.readByFamilyAt ? " Семья прочитала." : " Семья ещё не прочитала."}
+          Report sent: {report.tasks.map(careTaskLabel).join(", ") || "no tasks"}
+          {report.photos.length > 0 && `, ${report.photos.length} photos`}.
+          {report.readByFamilyAt ? " The family read it." : " The family hasn’t read it yet."}
         </p>
       )}
     </Card>
@@ -179,7 +179,7 @@ function MissedAction({
       <input
         type="text"
         value={reason}
-        placeholder="Почему не состоялся"
+        placeholder="Why it didn’t happen"
         onChange={(event) => onReason(event.target.value)}
         className={`${inputClass} min-w-48 flex-1`}
       />
@@ -194,7 +194,7 @@ function MissedAction({
           })
         }
       >
-        Визит не состоялся
+        Mark as missed
       </GuardedButton>
     </>
   );

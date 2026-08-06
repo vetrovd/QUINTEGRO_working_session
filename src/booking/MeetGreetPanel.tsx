@@ -18,16 +18,16 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
 
   if (meetGreet.status === "skipped") {
     return (
-      <Step title="Знакомство" state="done">
-        <StepNote>Вы уже знакомы по прошлой броне — шаг пропущен.</StepNote>
+      <Step title="Meet & greet" state="done">
+        <StepNote>You’ve met on a previous booking — this step is skipped.</StepNote>
       </Step>
     );
   }
 
   if (meetGreet.status === "happened") {
     return (
-      <Step title="Знакомство" state="done">
-        <StepNote>Состоялось {meetGreet.meetingAt && formatDateTime(meetGreet.meetingAt)}.</StepNote>
+      <Step title="Meet & greet" state="done">
+        <StepNote>Took place {meetGreet.meetingAt && formatDateTime(meetGreet.meetingAt)}.</StepNote>
       </Step>
     );
   }
@@ -35,19 +35,19 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
   const stepState = meetGreet.status === "accepted" ? "waiting" : "todo";
 
   return (
-    <Step title="Знакомство с семьёй и питомцем" state={stepState}>
+    <Step title="Meet the family and the pet" state={stepState}>
       {meetGreet.status === "proposed" && meetGreet.meetingAt && (
         <StepNote>
-          Предложено {formatDateTime(meetGreet.meetingAt)} со стороны{" "}
-          {meetGreet.proposedBy === "family" ? "семьи" : "ситтера"}.{" "}
-          {meetGreet.proposedBy === role ? "Ждём ответа второй стороны." : "Ваш ход."}
+          {meetGreet.proposedBy === "family" ? "The family" : "The sitter"} proposed{" "}
+          {formatDateTime(meetGreet.meetingAt)}.{" "}
+          {meetGreet.proposedBy === role ? "Waiting on the other side." : "Your move."}
         </StepNote>
       )}
 
       {meetGreet.status === "accepted" && meetGreet.meetingAt && (
         <StepNote>
-          Время согласовано: {formatDateTime(meetGreet.meetingAt)}. После встречи отметьте, что
-          знакомство состоялось.
+          Time agreed: {formatDateTime(meetGreet.meetingAt)}. Once you’ve met, mark the meet &
+          greet as done.
         </StepNote>
       )}
 
@@ -57,7 +57,7 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
             guard={acceptGuard}
             onClick={() => dispatch({ type: "MeetGreetAccepted", bookingId: booking.id, by: role })}
           >
-            Принять время
+            Accept this time
           </GuardedButton>
         )}
 
@@ -66,7 +66,7 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
             guard={happenedGuard}
             onClick={() => dispatch({ type: "MeetGreetHappened", bookingId: booking.id })}
           >
-            Знакомство состоялось
+            Meet & greet happened
           </GuardedButton>
         )}
 
@@ -90,7 +90,7 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
                 })
               }
             >
-              {meetGreet.status === "proposed" ? "Предложить другое время" : "Предложить время"}
+              {meetGreet.status === "proposed" ? "Propose another time" : "Propose a time"}
             </GuardedButton>
           </>
         )}

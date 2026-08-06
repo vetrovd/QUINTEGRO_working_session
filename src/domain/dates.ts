@@ -40,7 +40,7 @@ export function countDays(start: IsoDate, end: IsoDate): number {
 
 /** Ориентировочное время слота — для расписания ситтера. */
 export const SLOT_TIMES: Record<SlotOfDay, string> = {
-  morning: "09:00",
-  midday: "14:00",
-  evening: "19:00",
+  morning: "9:00 AM",
+  midday: "2:00 PM",
+  evening: "7:00 PM",
 };

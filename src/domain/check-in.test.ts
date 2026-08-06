@@ -15,7 +15,7 @@ describe("отметка прихода", () => {
 
     expect(canCheckIn(withoutKeys, todayMorning, NOW)).toMatchObject({
       allowed: false,
-      reason: "Передача ключей не подтверждена обеими сторонами — доступа в дом нет",
+      reason: "The key handoff isn't confirmed by both sides — you have no way in",
     });
 
     const state = reduce(withoutKeys, checkIn(todayMorning), CTX);
@@ -27,7 +27,7 @@ describe("отметка прихода", () => {
   it("недоступна для визита, который ещё не наступил", () => {
     expect(canCheckIn(readyToStart(), tomorrowMorning, NOW)).toMatchObject({
       allowed: false,
-      reason: "Визит ещё не наступил",
+      reason: "This visit hasn't come around yet",
     });
   });
 
@@ -58,7 +58,7 @@ describe("отметка прихода", () => {
     const first = reduce(readyToStart(), checkIn(todayMorning), CTX);
     const second = reduce(first, checkIn(todayMorning), CTX);
 
-    expect(lastRejection(second)).toBe("Приход уже отмечен");
+    expect(lastRejection(second)).toBe("You're already checked in");
   });
 
   it("визит отменённой брони отметить нельзя", () => {
@@ -66,7 +66,7 @@ describe("отметка прихода", () => {
 
     expect(canCheckIn(cancelled, todayMorning, NOW)).toMatchObject({
       allowed: false,
-      reason: "Визит отменён",
+      reason: "This visit is canceled",
     });
   });
 
@@ -75,7 +75,7 @@ describe("отметка прихода", () => {
     const state = reduce(started, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Опека уже началась — нужно досрочное прерывание");
+    expect(lastRejection(state)).toBe("Care has already started — end it early instead");
     expect(visitsOfBooking(state, BOOKING_ID).some((visit) => visit.status === "cancelled")).toBe(
       false,
     );

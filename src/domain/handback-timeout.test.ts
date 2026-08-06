@@ -24,7 +24,7 @@ import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
 
-const RATE = 70_000;
+const RATE = 2_000;
 const autoConfirm: DomainEvent = { type: "HandbackAutoConfirmed", bookingId: BOOKING_ID };
 
 /** Контекст со временем, сдвинутым от заявки на указанное число часов. */
@@ -63,7 +63,7 @@ describe("авто-подтверждение по таймауту", () => {
     const state = reduce(handbackRequested(), autoConfirm, ctx);
 
     expect(booking(state).status).toBe("awaitingHandback");
-    expect(lastRejection(state)).toBe("Окно ответа семьи ещё не истекло");
+    expect(lastRejection(state)).toBe("The family's response window hasn't run out yet");
     expect(expiredHandbacks(handbackRequested(), ctx.now)).toEqual([]);
   });
 
@@ -103,14 +103,14 @@ describe("ручное подтверждение имеет приоритет"
     const state = reduce(closed(), autoConfirm, after(100));
 
     expect(booking(state).closedBy).toBe("family");
-    expect(lastRejection(state)).toBe("Бронь уже закрыта");
+    expect(lastRejection(state)).toBe("This booking is already closed");
   });
 
   it("бронь без заявки на сдачу таймаут не закрывает", () => {
     const state = reduce(workDone(), autoConfirm, after(100));
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Ситтер ещё не заявил сдачу работы");
+    expect(lastRejection(state)).toBe("The sitter hasn't submitted the work yet");
     expect(canAutoConfirmHandback(workDone(), BOOKING_ID, after(100).now).allowed).toBe(false);
   });
 });

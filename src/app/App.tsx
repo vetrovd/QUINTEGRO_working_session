@@ -7,7 +7,7 @@ import { EarningsScreen } from "../sitter/EarningsScreen";
 import { ScheduleScreen } from "../sitter/ScheduleScreen";
 import { DebugBar } from "./DebugBar";
 import { PhoneFrame } from "./PhoneFrame";
-import { RoleSwitcher } from "./RoleSwitcher";
+import { AccountName, RoleSwitcher } from "./roles";
 import { SitterNav } from "./SitterNav";
 import { useRoute } from "./useRoute";
 import { routeToHash } from "./routes";
@@ -23,7 +23,7 @@ export function App() {
           header={
             <>
               <p className="text-body font-semibold text-stone-900">Pet sitting</p>
-              <RoleSwitcher role={route.role} />
+              <AccountName role={route.role} />
             </>
           }
           nav={route.role === "sitter" ? <SitterNav route={route} /> : null}
@@ -40,6 +40,8 @@ export function App() {
             <span className="size-1.5 shrink-0 rounded-full bg-stone-400" aria-hidden="true" />
             Prototype controls
           </p>
+          <RoleSwitcher role={route.role} />
+          <hr className="my-4 border-dashed border-stone-300" />
           <DebugBar />
         </aside>
       </div>

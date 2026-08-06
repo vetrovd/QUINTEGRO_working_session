@@ -44,26 +44,37 @@ export function expiredHandbacks(state: DomainState, now: IsoDateTime): BookingI
  * состоялось, сколько нет, и какая сумма из этого выходит.
  */
 export interface HandbackSummary {
-  /** Все визиты периода, кроме отменённых. */
+  /** Все визиты, на которые разворачивался период. */
   planned: number;
   completed: number;
-  /** Визиты, которые не состоялись. Отдельный статус им даёт тикет 12. */
-  notCompleted: number;
+  /** Визиты, которые ситтер отметил не состоявшимися. */
+  missed: number;
+  /** Визиты, снятые отменой брони или досрочным прерыванием. */
+  cancelled: number;
+  /** Ни отчёта, ни отметки: визит просто остался в плане. */
+  unaccounted: number;
   grossMinor: number;
   feeMinor: number;
   netMinor: number;
 }
 
 export function handbackSummary(state: DomainState, bookingId: BookingId): HandbackSummary {
-  const visits = visitsOfBooking(state, bookingId).filter((visit) => visit.status !== "cancelled");
+  const visits = visitsOfBooking(state, bookingId);
   const earnings = earningsOfBooking(state, bookingId);
+  const count = (status: string) => visits.filter((visit) => visit.status === status).length;
   const sum = (pick: (item: (typeof earnings)[number]) => number) =>
     earnings.reduce((total, item) => total + pick(item), 0);
 
+  const completed = count("completed");
+  const missed = count("missed");
+  const cancelled = count("cancelled");
+
   return {
     planned: visits.length,
-    completed: earnings.length,
-    notCompleted: visits.length - earnings.length,
+    completed,
+    missed,
+    cancelled,
+    unaccounted: visits.length - completed - missed - cancelled,
     grossMinor: sum((item) => item.grossMinor),
     feeMinor: sum((item) => item.feeMinor),
     netMinor: sum((item) => item.netMinor),

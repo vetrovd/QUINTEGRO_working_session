@@ -1,5 +1,5 @@
 import { canMarkReportRead } from "../domain/guards";
-import { submittedReportsOfBooking, unreadReportsCount } from "../domain/reports";
+import { unreadReportsCount, visitTimelineOfBooking } from "../domain/reports";
 import { SEED_FAMILY_ID } from "../domain/seed";
 import type { DomainState } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
@@ -20,9 +20,7 @@ export function ReportsFeed() {
     (total, booking) => total + unreadReportsCount(state, booking.id),
     0,
   );
-  const hasReports = bookings.some(
-    (booking) => submittedReportsOfBooking(state, booking.id).length > 0,
-  );
+  const timeline = bookings.flatMap((booking) => visitTimelineOfBooking(state, booking.id));
 
   return (
     <section>
@@ -30,18 +28,49 @@ export function ReportsFeed() {
         Отчёты о визитах{unread > 0 && ` · ${unread} новых`}
       </SectionTitle>
 
-      {!hasReports ? (
+      {timeline.length === 0 ? (
         <EmptyState>Отчётов пока нет. Они появятся, когда ситтер начнёт визиты.</EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
-          {bookings.flatMap((booking) =>
-            submittedReportsOfBooking(state, booking.id).map(({ visit }) => (
+          {timeline.map((visit) =>
+            visit.status === "missed" ? (
+              <MissedCard key={visit.id} state={state} visitId={visit.id} />
+            ) : (
               <ReportCard key={visit.id} state={state} visitId={visit.id} />
-            )),
+            ),
           )}
         </div>
       )}
     </section>
+  );
+}
+
+/** Пропущенный визит в ленте: семья узнаёт о нём сразу, а не при закрытии брони. */
+function MissedCard({ state, visitId }: { state: DomainState; visitId: string }) {
+  const visit = state.visits[visitId];
+  const pet = state.pets[state.bookings[visit.bookingId].petId];
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold text-stone-900">
+            {formatDateWithWeekday(visit.date)} · {slotLabel(visit.slot)}
+          </p>
+          <p className="text-sm text-stone-500">
+            {pet.name} · отмечено {visit.missedAt && formatDateTime(visit.missedAt)}
+          </p>
+        </div>
+        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-900">
+          Не состоялся
+        </span>
+      </div>
+
+      <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
+        Ситтер отметил, что визит не состоялся
+        {visit.missedReason && `: «${visit.missedReason}»`}. Этот визит не будет оплачен.
+      </p>
+    </Card>
   );
 }
 

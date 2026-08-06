@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { addDays, today } from "../domain/dates";
-import { canCheckIn } from "../domain/guards";
+import { canCheckIn, canMarkVisitMissed } from "../domain/guards";
 import { SEED_SITTER_ID } from "../domain/seed";
 import type { DomainState, Visit } from "../domain/types";
 import { compareVisits } from "../domain/visits";
 import { useStore } from "../store/StoreProvider";
 import { careTaskLabel, formatDateWithWeekday, formatTime, slotLabel } from "../app/format";
-import { Card, EmptyState, GuardedButton, SectionTitle } from "../app/ui";
+import { Card, EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
 import { ReportComposer } from "./ReportComposer";
 
 /**
@@ -25,6 +26,13 @@ export function VisitSchedule() {
 
   const upcoming = visits.filter((visit) => visit.status === "scheduled");
   const groups = [
+    // Просроченные идут первыми: день прошёл, а визит не закрыт ни отчётом, ни
+    // пропуском — раньше такие визиты просто исчезали из расписания.
+    {
+      title: "Просрочены",
+      hint: "День прошёл, визит не закрыт",
+      items: upcoming.filter((visit) => visit.date < currentDate),
+    },
     {
       title: "Ждут отчёта",
       hint: "Приход отмечен, отчёт ещё не сдан",
@@ -37,6 +45,11 @@ export function VisitSchedule() {
     },
     { title: "Позже", items: upcoming.filter((visit) => visit.date > weekEnd) },
     { title: "Отчёт сдан", items: visits.filter((visit) => visit.status === "completed") },
+    {
+      title: "Не состоялись",
+      hint: "Начисления по ним нет",
+      items: visits.filter((visit) => visit.status === "missed"),
+    },
   ].filter((group) => group.items.length > 0);
 
   return (
@@ -69,11 +82,13 @@ export function VisitSchedule() {
 
 function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
   const { dispatch, now } = useStore();
+  const [missedReason, setMissedReason] = useState("");
   const booking = state.bookings[visit.bookingId];
   const pet = state.pets[booking.petId];
   const family = state.families[booking.familyId];
   const report = state.reports[visit.id];
   const completed = visit.status === "completed";
+  const missed = visit.status === "missed";
 
   return (
     <Card>
@@ -93,25 +108,46 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
         )}
       </div>
 
-      {!completed && (
+      {!completed && !missed && (
         <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
           <span className="font-medium">Уход: </span>
           {pet.careNotes}
         </p>
       )}
 
+      {missed && (
+        <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
+          Визит не состоялся{visit.missedReason && `: «${visit.missedReason}»`}. Начисления по нему
+          нет, семья видит это в ленте.
+        </p>
+      )}
+
       {visit.status === "scheduled" && (
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-start gap-3">
           <GuardedButton
             guard={canCheckIn(state, visit.id, now)}
             onClick={() => dispatch({ type: "VisitCheckedIn", visitId: visit.id })}
           >
             Отметить приход
           </GuardedButton>
+          <MissedAction visit={visit} state={state} reason={missedReason} onReason={setMissedReason} />
         </div>
       )}
 
-      {visit.status === "checkedIn" && <ReportComposer visit={visit} state={state} />}
+      {visit.status === "checkedIn" && (
+        <>
+          <ReportComposer visit={visit} state={state} />
+          {/* Ошибочно отмеченный приход надо чем-то закрыть, иначе бронь не сдать. */}
+          <div className="mt-3 flex flex-wrap items-start gap-3 border-t border-stone-200 pt-3">
+            <MissedAction
+              visit={visit}
+              state={state}
+              reason={missedReason}
+              onReason={setMissedReason}
+            />
+          </div>
+        </>
+      )}
 
       {completed && report && (
         <p className="mt-3 text-sm text-stone-600">
@@ -121,5 +157,45 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
         </p>
       )}
     </Card>
+  );
+}
+
+/** Отметка пропуска: причину видит семья, поэтому она не обязательна, но полезна. */
+function MissedAction({
+  visit,
+  state,
+  reason,
+  onReason,
+}: {
+  visit: Visit;
+  state: DomainState;
+  reason: string;
+  onReason: (value: string) => void;
+}) {
+  const { dispatch } = useStore();
+
+  return (
+    <>
+      <input
+        type="text"
+        value={reason}
+        placeholder="Почему не состоялся"
+        onChange={(event) => onReason(event.target.value)}
+        className={`${inputClass} min-w-48 flex-1`}
+      />
+      <GuardedButton
+        tone="danger"
+        guard={canMarkVisitMissed(state, visit.id)}
+        onClick={() =>
+          dispatch({
+            type: "VisitMissed",
+            visitId: visit.id,
+            reason: reason.trim() || undefined,
+          })
+        }
+      >
+        Визит не состоялся
+      </GuardedButton>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import type { Booking, Role } from "../domain/types";
 import { HandbackPanel } from "./HandbackPanel";
 import { KeyHandoverPanel } from "./KeyHandoverPanel";
 import { MeetGreetPanel } from "./MeetGreetPanel";
+import { TerminatePanel } from "./TerminatePanel";
 
 /**
  * Весь путь брони одним списком: знакомство и передача ключей до старта,
@@ -13,6 +14,7 @@ export function BookingSteps({ booking, role }: { booking: Booking; role: Role }
   const preparing = booking.status === "confirmed" || booking.status === "readyToStart";
   const closing =
     booking.status === "inProgress" ||
+    booking.status === "terminatedEarly" ||
     booking.status === "awaitingHandback" ||
     booking.status === "completed" ||
     booking.status === "disputed";
@@ -29,6 +31,7 @@ export function BookingSteps({ booking, role }: { booking: Booking; role: Role }
         <KeyHandoverPanel booking={booking} role={role} direction="handover" />
         {closing && (
           <>
+            <TerminatePanel booking={booking} role={role} />
             <KeyHandoverPanel booking={booking} role={role} direction="return" />
             <HandbackPanel booking={booking} role={role} />
           </>
@@ -55,6 +58,11 @@ function bannerOf(booking: Booking): { tone: string; text: string } {
       return { tone: EMERALD, text: "Опека закрыта: ключи возвращены, работа принята." };
     case "inProgress":
       return { tone: EMERALD, text: "Опека идёт: ключи переданы, знакомство состоялось." };
+    case "terminatedEarly":
+      return {
+        tone: AMBER,
+        text: "Опека прервана досрочно — бронь ещё нужно закрыть: вернуть ключи и сдать работу.",
+      };
     default: {
       const missing = missingReadinessSteps(booking);
       return missing.length > 0

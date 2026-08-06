@@ -19,12 +19,14 @@ export function VisitProgress({
     (visit) => visit.status === "checkedIn" || visit.status === "completed",
   );
   const reported = visits.filter((visit) => visit.status === "completed");
+  const missed = visits.filter((visit) => visit.status === "missed");
   const last = visited.at(-1);
 
   return (
     <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
       <p>
-        Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}.
+        Визиты: {visited.length} из {visits.length} состоялись, отчётов сдано {reported.length}
+        {missed.length > 0 && `, не состоялось ${missed.length}`}.
         {last?.checkedInAt && (
           <>
             {" "}

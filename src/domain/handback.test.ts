@@ -68,7 +68,7 @@ describe("заявка на сдачу работы", () => {
     const state = reduce(keysReturned(started), request, CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toContain("Сдайте отчёт по визиту");
+    expect(lastRejection(state)).toContain("Закройте визит, где отмечен приход");
   });
 
   it("переводит бронь в ожидание подтверждения семьи", () => {
@@ -154,7 +154,7 @@ describe("сводка для семьи", () => {
     expect(handbackSummary(handbackRequested(), BOOKING_ID)).toMatchObject({
       planned: 10,
       completed: 1,
-      notCompleted: 9,
+      unaccounted: 9,
       grossMinor: RATE,
       netMinor: netMinor(RATE),
     });
@@ -168,7 +168,7 @@ describe("сводка для семьи", () => {
 
     expect(handbackSummary(twice, BOOKING_ID)).toMatchObject({
       completed: 2,
-      notCompleted: 8,
+      unaccounted: 8,
       grossMinor: 2 * RATE,
     });
   });

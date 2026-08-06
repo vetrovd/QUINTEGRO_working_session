@@ -22,6 +22,7 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   confirmed: "Принята",
   readyToStart: "Готова к старту",
   inProgress: "Опека идёт",
+  terminatedEarly: "Прервана досрочно",
   awaitingHandback: "Ждёт подтверждения закрытия",
   completed: "Опека закрыта",
   disputed: "Спор",
@@ -34,6 +35,7 @@ const STATUS_TONES: Record<BookingStatus, string> = {
   confirmed: "bg-sky-100 text-sky-900",
   readyToStart: "bg-indigo-100 text-indigo-900",
   inProgress: "bg-emerald-100 text-emerald-900",
+  terminatedEarly: "bg-orange-100 text-orange-900",
   awaitingHandback: "bg-amber-200 text-amber-900",
   completed: "bg-stone-800 text-white",
   disputed: "bg-red-600 text-white",
@@ -51,6 +53,7 @@ const VISIT_LABELS: Record<VisitStatus, string> = {
   scheduled: "Запланирован",
   checkedIn: "Ситтер на месте",
   completed: "Отчёт сдан",
+  missed: "Не состоялся",
   cancelled: "Отменён",
 };
 
@@ -82,6 +85,8 @@ const EVENT_LABELS: Record<DomainEvent["type"], string> = {
   VisitReportSaved: "Отчёт сохранён",
   VisitReportSubmitted: "Отчёт сдан",
   VisitReportRead: "Семья прочитала отчёт",
+  VisitMissed: "Визит не состоялся",
+  BookingTerminatedEarly: "Опека прервана досрочно",
   HandbackRequested: "Ситтер заявил сдачу работы",
   HandbackConfirmed: "Семья подтвердила закрытие",
   HandbackAutoConfirmed: "Закрытие по молчанию семьи",

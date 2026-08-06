@@ -43,13 +43,15 @@ export interface Pet {
  * `completed` — семья подтвердила, и только тогда деньги разблокированы;
  * `disputed` — семья оспорила, деньги остаются заблокированными (ADR 0001).
  * Спор терминален: роли, которая разбирает конфликты, в прототипе нет.
- * Досрочное прерывание — terminatedEarly — добавляет тикет 12.
+ * `terminatedEarly` — опека прервана, но бронь ещё закрывается тем же
+ * Handback'ом: прерывание не должно быть дырой в деньгах.
  */
 export type BookingStatus =
   | "requested"
   | "confirmed"
   | "readyToStart"
   | "inProgress"
+  | "terminatedEarly"
   | "awaitingHandback"
   | "completed"
   | "disputed"
@@ -80,8 +82,13 @@ export interface KeyHandover {
   confirmedBySitter: boolean;
 }
 
-/** Визит завершается отправкой отчёта, а не уходом ситтера из дома. */
-export type VisitStatus = "scheduled" | "checkedIn" | "completed" | "cancelled";
+/**
+ * Визит завершается отправкой отчёта, а не уходом ситтера из дома.
+ * `missed` — визит не состоялся (это признаёт ситтер), `cancelled` — визит
+ * отменён вместе с бронью или её досрочным прерыванием. Разница нужна:
+ * пропуск — расхождение с планом, отмена — согласованное сокращение плана.
+ */
+export type VisitStatus = "scheduled" | "checkedIn" | "completed" | "missed" | "cancelled";
 
 export interface Visit {
   id: VisitId;
@@ -91,6 +98,8 @@ export interface Visit {
   status: VisitStatus;
   checkedInAt?: IsoDateTime;
   completedAt?: IsoDateTime;
+  missedAt?: IsoDateTime;
+  missedReason?: string;
 }
 
 export type VisitReportStatus = "draft" | "submitted";
@@ -136,6 +145,9 @@ export interface Booking {
   disputedAt?: IsoDateTime;
   /** Что именно не так. Спор без причины бесполезен для разбора. */
   disputeReason?: string;
+  terminatedAt?: IsoDateTime;
+  terminatedBy?: Role;
+  terminationReason?: string;
   declineReason?: string;
 }
 
@@ -198,6 +210,11 @@ export type DomainEvent =
     }
   | { type: "VisitReportSubmitted"; visitId: VisitId }
   | { type: "VisitReportRead"; visitId: VisitId }
+  /** Визит не состоялся. Признаёт ситтер — начисления по нему не будет. */
+  | { type: "VisitMissed"; visitId: VisitId; reason?: string }
+  /** Опека прерывается досрочно любой из сторон. Бронь всё равно закрывается
+   *  через Handback, а деньги считаются по фактически завершённым визитам. */
+  | { type: "BookingTerminatedEarly"; bookingId: BookingId; by: Role; reason?: string }
   /** Ситтер заявляет сдачу работы: ключи вернул, визиты закрыл. */
   | { type: "HandbackRequested"; bookingId: BookingId }
   /** Семья подтверждает закрытие — единственное событие, которое даёт ситтеру

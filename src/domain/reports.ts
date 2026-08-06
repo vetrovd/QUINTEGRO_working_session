@@ -16,6 +16,17 @@ export function submittedReportsOfBooking(
     .filter((item): item is ReportedVisit => item.report?.status === "submitted");
 }
 
+/**
+ * Лента для семьи: сданные отчёты и пропущенные визиты вперемешку, в порядке
+ * визитов. Пропуск семья должна видеть сразу, а не узнавать при закрытии.
+ */
+export function visitTimelineOfBooking(state: DomainState, bookingId: BookingId): Visit[] {
+  return visitsOfBooking(state, bookingId).filter(
+    (visit) =>
+      visit.status === "missed" || state.reports[visit.id]?.status === "submitted",
+  );
+}
+
 export function unreadReportsCount(state: DomainState, bookingId: BookingId): number {
   return submittedReportsOfBooking(state, bookingId).filter(
     (item) => !item.report.readByFamilyAt,

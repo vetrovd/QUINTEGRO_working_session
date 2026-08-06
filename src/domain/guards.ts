@@ -34,6 +34,8 @@ export function statusLabel(status: BookingStatus): string {
       return "готова к старту";
     case "inProgress":
       return "в работе";
+    case "terminatedEarly":
+      return "прервана досрочно";
     case "awaitingHandback":
       return "ждёт подтверждения закрытия";
     case "completed":
@@ -63,8 +65,30 @@ export function canCancelBooking(state: DomainState, bookingId: BookingId): Guar
   if (booking.status === "cancelled") return deny("Бронь уже отменена");
   if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека закрыта — отменять нечего");
-  if (booking.status === "inProgress" || booking.status === "awaitingHandback") {
+  if (
+    booking.status === "inProgress" ||
+    booking.status === "terminatedEarly" ||
+    booking.status === "awaitingHandback"
+  ) {
     return deny("Опека уже началась — нужно досрочное прерывание");
+  }
+  return allow;
+}
+
+/**
+ * Досрочное прерывание доступно обеим сторонам: семья вернулась раньше или
+ * ситтер выбыл. Отличается от отмены тем, что бронь не исчезает — она всё
+ * равно закрывается через Handback, иначе прерывание стало бы дырой в деньгах.
+ */
+export function canTerminateEarly(state: DomainState, bookingId: BookingId): Guard {
+  const booking = state.bookings[bookingId];
+  if (!booking) return deny("Бронь не найдена");
+  if (booking.status === "terminatedEarly") return deny("Опека уже прервана");
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
+  if (booking.status === "awaitingHandback") return deny("Работа уже сдана на подтверждение");
+  if (booking.status === "completed") return deny("Опека закрыта — прерывать нечего");
+  if (booking.status !== "inProgress") {
+    return deny("Опека ещё не началась — бронь можно просто отменить");
   }
   return allow;
 }
@@ -118,7 +142,12 @@ export function canProposeKeyHandover(
   if (handover.status === "proposed" && handover.proposedBy === by) {
     return deny("Ваше предложение уже отправлено — ждём подтверждения второй стороны");
   }
-  if (direction === "return" && booking.status !== "inProgress") {
+  // Прерванная опека закрывается тем же путём, поэтому ключи возвращают и в ней.
+  if (
+    direction === "return" &&
+    booking.status !== "inProgress" &&
+    booking.status !== "terminatedEarly"
+  ) {
     return deny("Ключи возвращают в конце опеки");
   }
   return allow;
@@ -179,6 +208,7 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
   const visit = state.visits[visitId];
   if (!visit) return deny("Визит не найден");
   if (visit.status === "cancelled") return deny("Визит отменён");
+  if (visit.status === "missed") return deny("Визит отмечен как не состоявшийся");
   if (visit.status === "completed") return deny("Визит уже завершён");
   if (visit.status === "checkedIn") return deny("Приход уже отмечен");
 
@@ -200,10 +230,32 @@ export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTim
 
 // --- Отчёты ------------------------------------------------------------------
 
+/**
+ * Пропуск визита признаёт ситтер: начисления по такому визиту не будет.
+ * Отметку прихода тоже можно признать пропуском — иначе визит с ошибочным
+ * приходом остаётся без отчёта и без пропуска, и бронь не закрыть.
+ */
+export function canMarkVisitMissed(state: DomainState, visitId: VisitId): Guard {
+  const visit = state.visits[visitId];
+  if (!visit) return deny("Визит не найден");
+  if (visit.status === "missed") return deny("Визит уже отмечен как не состоявшийся");
+  if (visit.status === "cancelled") return deny("Визит отменён");
+  if (visit.status === "completed") return deny("Отчёт по визиту сдан — визит состоялся");
+
+  const booking = state.bookings[visit.bookingId];
+  // Набор начислений заморожен с момента заявки на сдачу работы: сводка,
+  // которую увидела семья, после этого не меняется.
+  if (booking.status === "awaitingHandback") return deny("Работа уже сдана на подтверждение");
+  if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
+  if (booking.status === "completed") return deny("Опека закрыта");
+  return allow;
+}
+
 export function canSaveVisitReport(state: DomainState, visitId: VisitId): Guard {
   const visit = state.visits[visitId];
   if (!visit) return deny("Визит не найден");
   if (visit.status === "cancelled") return deny("Визит отменён");
+  if (visit.status === "missed") return deny("Визит отмечен как не состоявшийся");
   if (state.reports[visitId]?.status === "submitted") {
     return deny("Отчёт отправлен — изменить его нельзя");
   }
@@ -238,7 +290,8 @@ export function canRequestHandback(state: DomainState, bookingId: BookingId): Gu
   }
   if (booking.status === "disputed") return deny(DISPUTE_DEAD_END);
   if (booking.status === "completed") return deny("Опека уже закрыта");
-  if (booking.status !== "inProgress") {
+  // Прерванная досрочно опека сдаётся тем же путём — иначе её нечем закрыть.
+  if (booking.status !== "inProgress" && booking.status !== "terminatedEarly") {
     return deny(`Опека ещё не началась: бронь в статусе «${statusLabel(booking.status)}»`);
   }
   if (booking.keys.return.status !== "done") {
@@ -248,7 +301,9 @@ export function canRequestHandback(state: DomainState, bookingId: BookingId): Gu
     (visit) => visit.bookingId === bookingId && visit.status === "checkedIn",
   );
   if (open.length > 0) {
-    return deny(`Сдайте отчёт по визиту, где отмечен приход (${open.length})`);
+    return deny(
+      `Закройте визит, где отмечен приход (${open.length}): сдайте отчёт или отметьте пропуск`,
+    );
   }
   return allow;
 }

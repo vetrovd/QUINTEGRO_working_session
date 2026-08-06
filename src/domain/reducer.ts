@@ -8,6 +8,7 @@ import {
   canDisputeHandback,
   canMarkMeetGreetHappened,
   canMarkReportRead,
+  canMarkVisitMissed,
   canProposeKeyHandover,
   canProposeMeetGreet,
   canRequestHandback,
@@ -15,6 +16,7 @@ import {
   canRespondToBooking,
   canSaveVisitReport,
   canSubmitVisitReport,
+  canTerminateEarly,
   meetGreetSettled,
 } from "./guards";
 import type {
@@ -246,6 +248,46 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
       const report = state.reports[event.visitId];
       return commit(state, event, ctx, {
         reports: { ...state.reports, [event.visitId]: { ...report, readByFamilyAt: ctx.now } },
+      });
+    }
+
+    case "VisitMissed": {
+      const guard = canMarkVisitMissed(state, event.visitId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      const visit = state.visits[event.visitId];
+      // Начисления по пропущенному визиту не будет: Earning считается только по
+      // завершённым визитам, поэтому отдельного правила про деньги здесь нет.
+      return commit(state, event, ctx, {
+        visits: {
+          ...state.visits,
+          [visit.id]: {
+            ...visit,
+            status: "missed",
+            missedAt: ctx.now,
+            missedReason: event.reason,
+            checkedInAt: undefined,
+          },
+        },
+      });
+    }
+
+    case "BookingTerminatedEarly": {
+      const guard = canTerminateEarly(state, event.bookingId);
+      if (!guard.allowed) return reject(state, event, ctx, guard.reason);
+      const terminated: Booking = {
+        ...state.bookings[event.bookingId],
+        status: "terminatedEarly",
+        terminatedAt: ctx.now,
+        terminatedBy: event.by,
+        terminationReason: event.reason,
+      };
+      // Оставшиеся визиты отменены, а не пропущены: их не сорвали, от них
+      // отказались — поэтому они уходят и из плана периода.
+      return commit(state, event, ctx, {
+        bookings: { ...state.bookings, [terminated.id]: terminated },
+        visits: mapVisits(state, terminated.id, (visit) =>
+          visit.status === "scheduled" ? { ...visit, status: "cancelled" } : visit,
+        ),
       });
     }
 

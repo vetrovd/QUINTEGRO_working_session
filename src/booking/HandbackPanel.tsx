@@ -28,8 +28,10 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
       state={disputed ? "blocked" : closed ? "done" : awaiting ? "waiting" : "todo"}
     >
       <StepNote>
-        Визитов состоялось {summary.completed} из {summary.planned}
-        {summary.notCompleted > 0 && `, не состоялось ${summary.notCompleted}`}.{" "}
+        Визитов состоялось {summary.completed} из {summary.planned} по плану периода
+        {summary.missed > 0 && `, не состоялось ${summary.missed}`}
+        {summary.cancelled > 0 && `, снято прерыванием ${summary.cancelled}`}
+        {summary.unaccounted > 0 && `, без отметки ${summary.unaccounted}`}.{" "}
         {role === "family" ? (
           <>
             К оплате — <strong>{formatMoney(summary.grossMinor)}</strong>: только за визиты со

@@ -13,7 +13,7 @@ import { shiftingClock } from "../domain/clock";
 import { expiredHandbacks } from "../domain/handback";
 import { reduce, reduceAll } from "../domain/reducer";
 import { createSeedState } from "../domain/seed";
-import type { DomainEvent, DomainState, IsoDateTime, Role } from "../domain/types";
+import type { DomainEvent, DomainState, IsoDateTime } from "../domain/types";
 
 const STORAGE_KEY = "pet-sitting-prototype";
 /** Поднимать при любом изменении формы DomainState — иначе старое состояние
@@ -38,8 +38,6 @@ interface StoreValue {
   state: DomainState;
   dispatch: (event: DomainEvent) => void;
   reset: () => void;
-  role: Role;
-  setRole: (role: Role) => void;
   /** Текущее время прототипа: настоящее плюс сдвиг из панели. */
   now: IsoDateTime;
   /** Прокрутить время вперёд — и дать сработать всему, что должно было. */
@@ -57,7 +55,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const persisted = useRef(loadPersisted()).current;
   const clock = useRef(shiftingClock(undefined, persisted.offsetMs)).current;
   const [state, rawDispatch] = useReducer(applyAction, persisted.state);
-  const [role, setRole] = useState<Role>("family");
   const [offsetMs, setOffsetMs] = useState(persisted.offsetMs);
 
   useEffect(() => {
@@ -104,13 +101,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       state,
       dispatch,
       reset,
-      role,
-      setRole,
       now,
       advanceHours,
       offsetHours: Math.round(offsetMs / 3_600_000),
     }),
-    [state, dispatch, reset, role, now, advanceHours, offsetMs],
+    [state, dispatch, reset, now, advanceHours, offsetMs],
   );
 
   return <StoreContext value={value}>{children}</StoreContext>;

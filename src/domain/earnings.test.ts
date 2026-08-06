@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   balanceOfSitter,
+  bookingTotalMinor,
   earnedTotalMinor,
   earningsOfBooking,
   plannedTotalMinor,
@@ -12,7 +13,9 @@ import {
   checkedIn,
   closed,
   completeVisit,
+  confirmed,
   readyToStart,
+  requested,
   RATE,
 } from "./fixtures";
 import { PLATFORM_FEE_RATE, feeMinor, netMinor } from "./money";
@@ -149,5 +152,26 @@ describe("начислено против плана", () => {
 
     expect(plannedTotalMinor(beforeStart, BOOKING_ID)).toBe(0);
     expect(earnedTotalMinor(beforeStart, BOOKING_ID)).toBe(0);
+  });
+
+  /**
+   * До ответа ситтера визитов ещё нет, но цена уже известна — иначе входящий
+   * запрос выглядит бесплатным ровно там, где ситтер решает, брать ли его.
+   */
+  it("считает стоимость запроса по его датам и слотам, пока визитов нет", () => {
+    const state = requested();
+
+    expect(plannedTotalMinor(state, BOOKING_ID)).toBe(0);
+    expect(bookingTotalMinor(state, BOOKING_ID)).toBe(10 * RATE);
+  });
+
+  it("после принятия считает стоимость по визитам", () => {
+    expect(bookingTotalMinor(confirmed(), BOOKING_ID)).toBe(10 * RATE);
+  });
+
+  it("у отменённой брони стоимости нет", () => {
+    const cancelled = reduce(confirmed(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+
+    expect(bookingTotalMinor(cancelled, BOOKING_ID)).toBe(0);
   });
 });

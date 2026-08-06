@@ -71,3 +71,29 @@ export function EmptyState({ children }: { children: ReactNode }) {
     </p>
   );
 }
+
+/** Заголовок экрана с возвратом на уровень выше. */
+export function ScreenTitle({
+  children,
+  back,
+  hint,
+}: {
+  children: ReactNode;
+  back?: { href: string; label: string };
+  hint?: string;
+}) {
+  return (
+    <div className="mb-4">
+      {back && (
+        <a
+          href={back.href}
+          className="mb-1 inline-flex items-center gap-1 text-sm text-stone-500 transition hover:text-stone-900"
+        >
+          <span aria-hidden="true">←</span> {back.label}
+        </a>
+      )}
+      <h2 className="text-xl font-semibold text-stone-900">{children}</h2>
+      {hint && <p className="mt-0.5 text-sm text-stone-500">{hint}</p>}
+    </div>
+  );
+}

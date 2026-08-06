@@ -1,3 +1,4 @@
+import { countDays } from "./dates";
 import { feeMinor, netMinor } from "./money";
 import type {
   Booking,
@@ -107,6 +108,19 @@ export function earnedTotalMinor(state: DomainState, bookingId: BookingId): numb
  */
 export function quoteTotalMinor(ratePerVisitMinor: number, visitCount: number): number {
   return visitCount * ratePerVisitMinor;
+}
+
+/**
+ * Во сколько обходится бронь целиком. До ответа ситтера визитов ещё нет, и
+ * считать приходится по её собственным параметрам: иначе входящий запрос
+ * выглядит бесплатным ровно там, где ситтер решает, брать ли его.
+ */
+export function bookingTotalMinor(state: DomainState, bookingId: BookingId): number {
+  const booking = state.bookings[bookingId];
+  if (!booking) return 0;
+  if (booking.status !== "requested") return plannedTotalMinor(state, bookingId);
+  const visitsPlanned = countDays(booking.startDate, booking.endDate) * booking.slots.length;
+  return quoteTotalMinor(booking.ratePerVisitMinor, visitsPlanned);
 }
 
 /** Сумма по плану: все визиты брони, кроме отменённых. */

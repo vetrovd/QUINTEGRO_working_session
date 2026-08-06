@@ -53,7 +53,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
       );
       setPhotos((current) => [...current, ...added]);
     } catch {
-      setPhotoError("Couldn’t read that file");
+      setPhotoError("Couldn't read that file");
     }
   }
 
@@ -143,7 +143,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
         >
           Send report
         </GuardedButton>
-        <p className="text-xs text-stone-500">A sent report can’t be changed.</p>
+        <p className="text-xs text-stone-500">A sent report can't be changed.</p>
       </div>
     </div>
   );

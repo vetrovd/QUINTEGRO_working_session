@@ -52,7 +52,7 @@ function bannerOf(booking: Booking): { tone: string; text: string } {
     case "disputed":
       return {
         tone: RED,
-        text: "A dispute is open: the booking isn’t closed and the sitter’s money is locked until review.",
+        text: "A dispute is open: the booking isn't closed and the sitter's money is locked until review.",
       };
     case "completed":
       return { tone: EMERALD, text: "Care is closed: keys returned, work accepted." };

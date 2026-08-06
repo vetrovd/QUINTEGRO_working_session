@@ -22,7 +22,7 @@ const proposeKeys = (by: "family" | "sitter") =>
 const confirmKeys = (by: "family" | "sitter") =>
   ({ type: "KeyHandoverConfirmed", bookingId: BOOKING_ID, direction: "handover", by }) as const;
 
-describe("the key handoff", () => {
+describe("передача ключей", () => {
   it("предложение фиксирует способ, время и подтверждение предложившего", () => {
     const state = reduce(confirmed(), proposeKeys("family"), CTX);
 

@@ -14,8 +14,11 @@ export function netMinor(grossMinor: number): number {
 
 export const feeRateLabel = `${Math.round(PLATFORM_FEE_RATE * 100)}%`;
 
+/** Рынок задан здесь и только здесь: валюта и локаль форматирования. */
+export const LOCALE = "en-US";
+
 /** Деньги хранятся в центах — чтобы расчёты не расходились на дробях. */
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat(LOCALE, {
   style: "currency",
   currency: "USD",
 });

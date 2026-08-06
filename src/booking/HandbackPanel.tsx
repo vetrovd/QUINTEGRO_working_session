@@ -39,7 +39,7 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
           </>
         ) : (
           <>
-            You’ll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
+            You'll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
             {formatMoney(summary.grossMinor)} before fees, {formatMoney(summary.feeMinor)} platform
             fee).
           </>
@@ -55,8 +55,8 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
           </p>
           {/* Тупик показан честно: роли, которая разбирает спор, в прототипе нет. */}
           <p className="mt-1">
-            The sitter’s money stays locked until this is reviewed. Review means a support role the
-            prototype doesn’t have, so the booking goes no further: this is the edge of the model,
+            The sitter's money stays locked until this is reviewed. Review means a support role the
+            prototype doesn't have, so the booking goes no further: this is the edge of the model,
             not a bug.
           </p>
         </div>
@@ -66,9 +66,9 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
         <StepNote>
           Booking closed{booking.completedAt && ` ${formatDateTime(booking.completedAt)}`}
           {booking.closedBy === "timeout"
-            ? `: the family didn’t respond within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
-            : " by the family’s confirmation"}{" "}
-          — the sitter’s money is unlocked.
+            ? `: the family didn't respond within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
+            : " by the family's confirmation"}{" "}
+          — the sitter's money is unlocked.
         </StepNote>
       )}
 
@@ -82,14 +82,14 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
                     ? "The sitter submitted the work — waiting on your confirmation."
                     : "Waiting on the family to confirm."}
                 </strong>{" "}
-                Confirming closes the booking and unlocks the sitter’s payout.
+                Confirming closes the booking and unlocks the sitter's payout.
               </StepNote>
               {/* Молчание семьи — тоже согласие: иначе бронь висит незакрытой,
                   а ситтер остаётся без денег (ADR 0001). */}
               <StepNote>
                 {role === "family"
-                  ? `If you don’t respond, the booking closes itself in ${formatDuration(timeLeftMs)} — silence counts as agreement.`
-                  : `If the family doesn’t respond, the booking closes itself in ${formatDuration(timeLeftMs)} and the money unlocks.`}
+                  ? `If you don't respond, the booking closes itself in ${formatDuration(timeLeftMs)} — silence counts as agreement.`
+                  : `If the family doesn't respond, the booking closes itself in ${formatDuration(timeLeftMs)} and the money unlocks.`}
               </StepNote>
             </>
           )}

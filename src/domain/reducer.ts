@@ -49,7 +49,7 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
   switch (event.type) {
     case "BookingRequested": {
       if (state.bookings[event.bookingId]) {
-        return reject(state, event, ctx, "Бронь с таким идентификатором уже существует");
+        return reject(state, event, ctx, "A booking with this id already exists");
       }
       const booking: Booking = {
         id: event.bookingId,
@@ -303,7 +303,7 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
 
     case "PayoutRequested": {
       if (state.payouts[event.payoutId]) {
-        return reject(state, event, ctx, "Вывод с таким идентификатором уже существует");
+        return reject(state, event, ctx, "A payout with this id already exists");
       }
       const guard = canRequestPayout(state, event.sitterId, event.visitIds);
       if (!guard.allowed) return reject(state, event, ctx, guard.reason);

@@ -122,7 +122,7 @@ describe("вывести больше доступного нельзя — ин
     const state = run([payout([TODAY_MORNING]), payout([TODAY_EVENING])], closedTwoVisits());
 
     expect(Object.keys(state.payouts)).toHaveLength(1);
-    expect(lastRejection(state)).toBe("Вывод с таким идентификатором уже существует");
+    expect(lastRejection(state)).toBe("A payout with this id already exists");
   });
 });
 

@@ -24,12 +24,12 @@ export function ReportsFeed() {
 
   return (
     <section>
-      <SectionTitle hint="Reading a report commits you to nothing and doesn’t affect payment">
+      <SectionTitle hint="Reading a report commits you to nothing and doesn't affect payment">
         Visit reports{unread > 0 && ` · ${unread} new`}
       </SectionTitle>
 
       {timeline.length === 0 ? (
-        <EmptyState>No reports yet. They’ll show up once the sitter starts visiting.</EmptyState>
+        <EmptyState>No reports yet. They'll show up once the sitter starts visiting.</EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           {timeline.map((visit) =>
@@ -68,7 +68,7 @@ function MissedCard({ state, visitId }: { state: DomainState; visitId: string })
 
       <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
         The sitter marked this visit as missed
-        {visit.missedReason && `: “${visit.missedReason}”`}. It won’t be paid for.
+        {visit.missedReason && `: “${visit.missedReason}”`}. It won't be paid for.
       </p>
     </Card>
   );

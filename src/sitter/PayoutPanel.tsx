@@ -6,7 +6,7 @@ import { payoutsOfSitter, selectionTotalMinor } from "../domain/payouts";
 import { SEED_SITTER_ID } from "../domain/seed";
 import type { VisitId } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { formatDate, formatDateTime, slotName } from "../app/format";
+import { formatDate, formatDateTime, plural, slotName } from "../app/format";
 import { Card, EmptyState, GuardedButton, SectionTitle } from "../app/ui";
 
 /**
@@ -38,7 +38,7 @@ export function PayoutPanel() {
 
   return (
     <section>
-      <SectionTitle hint="Cash-out is instant in the prototype: requested means paid">
+      <SectionTitle hint="Payouts are instant in the prototype: requested means paid">
         Cash out
       </SectionTitle>
 
@@ -50,8 +50,7 @@ export function PayoutPanel() {
       ) : (
         <Card>
           <p className="mb-2 text-sm text-stone-600">
-            {available.length} {available.length === 1 ? "visit" : "visits"} available. Uncheck any
-            to cash out only part.
+            {plural(available.length, "visit")} available. Uncheck any to cash out only part.
           </p>
           <ul className="flex flex-col divide-y divide-stone-100">
             {available.map((earning) => (
@@ -106,7 +105,7 @@ export function PayoutPanel() {
       {history.length > 0 && (
         <div className="mt-4">
           <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
-            Cash-out history · {history.length}
+            Payout history · {history.length}
           </p>
           <div className="flex flex-col gap-3">
             {history.map((record) => (

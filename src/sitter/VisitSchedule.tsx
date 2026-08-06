@@ -5,7 +5,7 @@ import { SEED_SITTER_ID } from "../domain/seed";
 import type { DomainState, Visit } from "../domain/types";
 import { compareVisits } from "../domain/visits";
 import { useStore } from "../store/StoreProvider";
-import { careTaskLabel, formatDateWithWeekday, formatTime, slotLabel } from "../app/format";
+import { careTaskLabel, formatDateWithWeekday, formatTime, plural, slotLabel } from "../app/format";
 import { Card, EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
 import { ReportComposer } from "./ReportComposer";
 
@@ -30,7 +30,7 @@ export function VisitSchedule() {
     // пропуском — раньше такие визиты просто исчезали из расписания.
     {
       title: "Overdue",
-      hint: "The day has passed and the visit isn’t closed",
+      hint: "The day has passed and the visit isn't closed",
       items: upcoming.filter((visit) => visit.date < currentDate),
     },
     {
@@ -152,8 +152,8 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
       {completed && report && (
         <p className="mt-3 text-sm text-stone-600">
           Report sent: {report.tasks.map(careTaskLabel).join(", ") || "no tasks"}
-          {report.photos.length > 0 && `, ${report.photos.length} photos`}.
-          {report.readByFamilyAt ? " The family read it." : " The family hasn’t read it yet."}
+          {report.photos.length > 0 && `, ${plural(report.photos.length, "photo")}`}.
+          {report.readByFamilyAt ? " The family read it." : " The family hasn't read it yet."}
         </p>
       )}
     </Card>
@@ -179,7 +179,7 @@ function MissedAction({
       <input
         type="text"
         value={reason}
-        placeholder="Why it didn’t happen"
+        placeholder="Why it didn't happen"
         onChange={(event) => onReason(event.target.value)}
         className={`${inputClass} min-w-48 flex-1`}
       />

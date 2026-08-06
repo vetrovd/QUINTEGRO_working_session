@@ -1,4 +1,5 @@
 import { SLOT_TIMES, parseIsoDate } from "../domain/dates";
+import { LOCALE } from "../domain/money";
 import type {
   BookingStatus,
   CareTask,
@@ -23,7 +24,7 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   readyToStart: "Ready to start",
   inProgress: "Care in progress",
   terminatedEarly: "Ended early",
-  awaitingHandback: "Awaiting your confirmation",
+  awaitingHandback: "Awaiting closing",
   completed: "Closed",
   disputed: "Disputed",
   declined: "Declined",
@@ -109,7 +110,22 @@ export function formatDuration(ms: number): string {
 }
 
 export function slotLabel(slot: SlotOfDay): string {
-  return `${SLOT_LABELS[slot]}, ${SLOT_TIMES[slot]}`;
+  return `${SLOT_LABELS[slot]}, ${clockLabel(SLOT_TIMES[slot])}`;
+}
+
+/** «14:00» из домена → «2:00 PM»: 24 часа американский рынок не читает. */
+function clockLabel(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+  const suffix = hours < 12 ? "AM" : "PM";
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
+/**
+ * Счётные существительные: «1 photos» выдаёт перевод, а не продукт. Правило
+ * покрывает только то, что считается в интерфейсе, — все слова правильные.
+ */
+export function plural(count: number, noun: string): string {
+  return `${count} ${count === 1 ? noun : `${noun}s`}`;
 }
 
 export function slotName(slot: SlotOfDay): string {
@@ -144,19 +160,19 @@ export function awaitingLabel(roles: Role[]): string {
   return roles.map((role) => ROLE_LABELS[role]).join(" and ");
 }
 
-const dayMonth = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" });
-const dayMonthWeekday = new Intl.DateTimeFormat("en-US", {
+const dayMonth = new Intl.DateTimeFormat(LOCALE, { month: "short", day: "numeric" });
+const dayMonthWeekday = new Intl.DateTimeFormat(LOCALE, {
   weekday: "short",
   month: "short",
   day: "numeric",
 });
-const dayMonthTime = new Intl.DateTimeFormat("en-US", {
+const dayMonthTime = new Intl.DateTimeFormat(LOCALE, {
   month: "short",
   day: "numeric",
   hour: "numeric",
   minute: "2-digit",
 });
-const timeOnly = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+const timeOnly = new Intl.DateTimeFormat(LOCALE, { hour: "numeric", minute: "2-digit" });
 
 export function formatDate(date: IsoDate): string {
   return dayMonth.format(parseIsoDate(date));

@@ -19,7 +19,7 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
   if (meetGreet.status === "skipped") {
     return (
       <Step title="Meet & greet" state="done">
-        <StepNote>You’ve met on a previous booking — this step is skipped.</StepNote>
+        <StepNote>You've met on a previous booking — this step is skipped.</StepNote>
       </Step>
     );
   }
@@ -46,7 +46,7 @@ export function MeetGreetPanel({ booking, role }: { booking: Booking; role: Role
 
       {meetGreet.status === "accepted" && meetGreet.meetingAt && (
         <StepNote>
-          Time agreed: {formatDateTime(meetGreet.meetingAt)}. Once you’ve met, mark the meet &
+          Time agreed: {formatDateTime(meetGreet.meetingAt)}. Once you've met, mark the meet &
           greet as done.
         </StepNote>
       )}

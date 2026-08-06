@@ -3,7 +3,7 @@ import type { Bucket, Earning, EarningStatus } from "../domain/earnings";
 import { feeRateLabel, formatMoney } from "../domain/money";
 import { SEED_SITTER_ID } from "../domain/seed";
 import { useStore } from "../store/StoreProvider";
-import { formatDate, slotName } from "../app/format";
+import { formatDate, plural, slotName } from "../app/format";
 import { Card, EmptyState, SectionTitle } from "../app/ui";
 
 const PARTS: { status: EarningStatus; label: string; dot: string }[] = [
@@ -52,14 +52,15 @@ export function EarningsPanel() {
           {balance.locked.count - disputedLocked > 0 && (
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
               Locked money unlocks when the family confirms the booking is closed. Until then it
-              can’t be cashed out.
+              can't be cashed out.
             </p>
           )}
 
           {disputedLocked > 0 && (
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
-              Locked by a dispute: {disputedLocked} visits. The family disputed the closing, and
-              this money stays locked until it’s reviewed.
+              Locked by a dispute: {plural(disputedLocked, "visit")}. The family disputed the
+              closing, and
+              this money stays locked until it's reviewed.
             </p>
           )}
 

@@ -2,7 +2,7 @@ import { earnedTotalMinor, plannedTotalMinor } from "../domain/earnings";
 import { formatMoney } from "../domain/money";
 import type { BookingId, DomainState } from "../domain/types";
 import { visitsOfBooking } from "../domain/visits";
-import { formatDate, formatTime, slotName } from "./format";
+import { formatDate, formatTime, plural, slotName } from "./format";
 
 /** Семья в отъезде видит, что ситтер приходил — без ожидания сообщения. */
 export function VisitProgress({
@@ -25,7 +25,8 @@ export function VisitProgress({
   return (
     <div className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
       <p>
-        Visits: {visited.length} of {visits.length} happened, {reported.length} reports filed
+        Visits: {visited.length} of {visits.length} happened, {plural(reported.length, "report")}{" "}
+        filed
         {missed.length > 0 && `, ${missed.length} missed`}.
         {last?.checkedInAt && (
           <>

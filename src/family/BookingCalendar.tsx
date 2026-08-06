@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { addDays, countDays, eachDate, parseIsoDate, toIsoDate, today } from "../domain/dates";
-import { dollarsToMinor, formatMoney } from "../domain/money";
+import { LOCALE, dollarsToMinor, formatMoney } from "../domain/money";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "../domain/seed";
 import { SLOTS_OF_DAY } from "../domain/types";
 import type { IsoDate, SlotOfDay } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { formatDateRange, slotLabel } from "../app/format";
+import { formatDateRange, plural, slotLabel } from "../app/format";
 import { Card, Field, SectionTitle, inputClass } from "../app/ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -164,7 +164,7 @@ export function BookingCalendar() {
     if (slots.length === 0) return "Pick at least one visit a day";
     return (
       <>
-        {formatDateRange(start, end)} · {days} days · {visits} visits ·{" "}
+        {formatDateRange(start, end)} · {plural(days, "day")} · {plural(visits, "visit")} ·{" "}
         <strong>{formatMoney(totalMinor)}</strong>
       </>
     );
@@ -237,7 +237,7 @@ function shiftMonth(month: IsoDate, delta: number): IsoDate {
 }
 
 function monthTitle(month: IsoDate): string {
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
+  return new Intl.DateTimeFormat(LOCALE, { month: "long", year: "numeric" }).format(
     parseIsoDate(month),
   );
 }

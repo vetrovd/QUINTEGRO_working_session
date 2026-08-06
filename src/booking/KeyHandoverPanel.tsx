@@ -65,7 +65,7 @@ export function KeyHandoverPanel({
           </StepNote>
           <StepNote>
             <strong>Waiting on {awaitingLabel(awaiting)} to confirm.</strong> With only one side
-            confirmed, the handoff hasn’t happened.
+            confirmed, the handoff hasn't happened.
           </StepNote>
         </>
       )}

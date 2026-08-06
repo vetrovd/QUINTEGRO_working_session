@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PLATFORM_FEE_RATE, dollarsToMinor, feeMinor, formatMoney, netMinor } from "./money";
+import { dollarsToMinor, feeMinor, formatMoney, netMinor } from "./money";
 
 /**
  * Деньги — единственное место домена, знающее про валюту и локаль. Проверка
@@ -21,7 +21,6 @@ describe("деньги", () => {
   });
 
   it("удерживает комиссию платформы, оставляя ситтеру остаток", () => {
-    expect(PLATFORM_FEE_RATE).toBe(0.2);
     expect(feeMinor(2_000)).toBe(400);
     expect(netMinor(2_000)).toBe(1_600);
   });

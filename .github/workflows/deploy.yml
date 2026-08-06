@@ -34,7 +34,11 @@ jobs:
 
       - run: npm run build
 
+      # enablement переключает источник Pages с "ветка main" на "GitHub Actions".
+      # Без этого деплой упадёт: репозиторий сейчас в legacy-режиме.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

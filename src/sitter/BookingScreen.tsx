@@ -2,10 +2,10 @@ import { useState } from "react";
 import { canRespondToBooking } from "../domain/guards";
 import type { BookingId } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { BookingCard } from "../app/BookingCard";
+import { BookingSummary } from "../app/BookingSummary";
 import { routeToHash } from "../app/routes";
 import { EmptyState, GuardedButton, ScreenTitle, inputClass } from "../app/ui";
-import { BookingSteps } from "../booking/BookingSteps";
+import { BookingTimeline } from "../booking/BookingTimeline";
 
 export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
   const { state } = useStore();
@@ -24,18 +24,21 @@ export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
   return (
     <>
       <ScreenTitle back={back}>Booking</ScreenTitle>
-      <BookingCard booking={booking} state={state}>
-        {booking.status === "requested" && (
-          <>
-            <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
-              <span className="font-medium">Care: </span>
-              {state.pets[booking.petId].careNotes}
-            </p>
-            <RespondActions bookingId={booking.id} />
-          </>
-        )}
-        <BookingSteps booking={booking} role="sitter" />
-      </BookingCard>
+      <BookingSummary booking={booking} state={state} counterpart="family" />
+
+      {booking.status === "requested" && (
+        <div className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
+          <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
+            <span className="font-medium">Care: </span>
+            {state.pets[booking.petId].careNotes}
+          </p>
+          <RespondActions bookingId={booking.id} />
+        </div>
+      )}
+
+      <div className="mt-6">
+        <BookingTimeline booking={booking} role="sitter" />
+      </div>
     </>
   );
 }

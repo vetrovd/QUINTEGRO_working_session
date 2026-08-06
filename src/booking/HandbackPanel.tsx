@@ -13,45 +13,29 @@ import { Step, StepNote } from "./Step";
  * Это единственная точка, где деньги ситтера становятся доступными (ADR 0001),
  * поэтому семья видит сводку до нажатия, а не после.
  */
-export function HandbackPanel({ booking, role }: { booking: Booking; role: Role }) {
+export function HandbackPanel({
+  booking,
+  role,
+  expanded,
+}: {
+  booking: Booking;
+  role: Role;
+  expanded: boolean;
+}) {
   const { state, dispatch, now } = useStore();
   const [reason, setReason] = useState("");
   const summary = handbackSummary(state, booking.id);
-  const awaiting = booking.status === "awaitingHandback";
-  const closed = booking.status === "completed";
-  const disputed = booking.status === "disputed";
+  const requestGuard = canRequestHandback(state, booking.id);
   const timeLeftMs = handbackTimeLeftMs(booking, now);
 
-  return (
-    <Step
-      title="Handing back the work"
-      state={disputed ? "blocked" : closed ? "done" : awaiting ? "waiting" : "todo"}
-    >
-      <StepNote>
-        {summary.completed} of {summary.planned} planned visits happened
-        {summary.missed > 0 && `, ${summary.missed} missed`}
-        {summary.cancelled > 0 && `, ${summary.cancelled} dropped by the early end`}
-        {summary.unaccounted > 0 && `, ${summary.unaccounted} unaccounted for`}.{" "}
-        {role === "family" ? (
-          <>
-            Due — <strong>{formatMoney(summary.grossMinor)}</strong>: only for visits with a filed
-            report.
-          </>
-        ) : (
-          <>
-            You'll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
-            {formatMoney(summary.grossMinor)} before fees, {formatMoney(summary.feeMinor)} platform
-            fee).
-          </>
-        )}
-      </StepNote>
-
-      {disputed && (
+  if (booking.status === "disputed") {
+    return (
+      <Step title="Handing back the work" state="blocked" last>
         <div className="rounded-md bg-red-50 px-3 py-2 text-red-900">
           <p>
             <strong>The family disputed the closing</strong>
-            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: “
-            {booking.disputeReason}”.
+            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: "
+            {booking.disputeReason}".
           </p>
           {/* Тупик показан честно: роли, которая разбирает спор, в прототипе нет. */}
           <p className="mt-1">
@@ -60,20 +44,55 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
             not a bug.
           </p>
         </div>
-      )}
+      </Step>
+    );
+  }
 
-      {closed && (
-        <StepNote>
-          Booking closed{booking.completedAt && ` ${formatDateTime(booking.completedAt)}`}
-          {booking.closedBy === "timeout"
-            ? `: the family didn't respond within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
-            : " by the family's confirmation"}{" "}
-          — the sitter's money is unlocked.
-        </StepNote>
-      )}
+  if (booking.status === "completed") {
+    return (
+      <Step
+        title="Handing back the work"
+        state="done"
+        last
+        record={`Closed${booking.completedAt ? ` ${formatDateTime(booking.completedAt)}` : ""}${
+          booking.closedBy === "timeout"
+            ? `: no reply within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
+            : " by the family's confirmation"
+        } — the sitter's money is unlocked.`}
+      />
+    );
+  }
 
-      {!closed && !disputed && (
+  const awaiting = booking.status === "awaitingHandback";
+
+  return (
+    <Step
+      title="Handing back the work"
+      state={expanded ? "current" : "future"}
+      last
+      reason={expanded || requestGuard.allowed ? undefined : requestGuard.reason}
+    >
+      {expanded && (
         <>
+          <StepNote>
+            {summary.completed} of {summary.planned} planned visits happened
+            {summary.missed > 0 && `, ${summary.missed} missed`}
+            {summary.cancelled > 0 && `, ${summary.cancelled} dropped by the early end`}
+            {summary.unaccounted > 0 && `, ${summary.unaccounted} unaccounted for`}.{" "}
+            {role === "family" ? (
+              <>
+                Due — <strong>{formatMoney(summary.grossMinor)}</strong>: only for visits with a
+                filed report.
+              </>
+            ) : (
+              <>
+                You'll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
+                {formatMoney(summary.grossMinor)} before fees, {formatMoney(summary.feeMinor)}{" "}
+                platform fee).
+              </>
+            )}
+          </StepNote>
+
           {awaiting && (
             <>
               <StepNote>
@@ -95,16 +114,16 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
           )}
 
           {role === "sitter" ? (
-            <div className="flex flex-wrap items-start gap-3">
+            <div>
               <GuardedButton
-                guard={canRequestHandback(state, booking.id)}
+                guard={requestGuard}
                 onClick={() => dispatch({ type: "HandbackRequested", bookingId: booking.id })}
               >
                 Hand back the work
               </GuardedButton>
             </div>
           ) : (
-            <div className="flex flex-wrap items-start gap-3">
+            <div className="flex flex-col items-start gap-3">
               <GuardedButton
                 guard={canConfirmHandback(state, booking.id)}
                 onClick={() => dispatch({ type: "HandbackConfirmed", bookingId: booking.id })}
@@ -116,14 +135,12 @@ export function HandbackPanel({ booking, role }: { booking: Booking; role: Role 
                 value={reason}
                 placeholder="What went wrong"
                 onChange={(event) => setReason(event.target.value)}
-                className={`${inputClass} min-w-56 flex-1`}
+                className={`${inputClass} w-full`}
               />
               <GuardedButton
                 tone="danger"
                 guard={canDisputeHandback(state, booking.id, reason)}
-                onClick={() =>
-                  dispatch({ type: "HandbackDisputed", bookingId: booking.id, reason })
-                }
+                onClick={() => dispatch({ type: "HandbackDisputed", bookingId: booking.id, reason })}
               >
                 Dispute
               </GuardedButton>

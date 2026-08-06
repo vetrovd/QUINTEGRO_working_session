@@ -16,7 +16,7 @@ export function PhoneFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="flex w-full max-w-[400px] flex-col overflow-hidden rounded-[2rem] border-stone-900 bg-white shadow-xl sm:h-[820px] sm:border-[10px]">
+    <div className="flex w-full max-w-[400px] flex-col overflow-hidden rounded-[2rem] border-stone-900 bg-white shadow-xl sm:h-[min(820px,calc(100vh-4rem))] sm:border-[10px]">
       <header className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
         {header}
       </header>

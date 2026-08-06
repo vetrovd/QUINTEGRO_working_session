@@ -26,10 +26,12 @@ export function KeyHandoverPanel({
   booking,
   role,
   direction,
+  expanded,
 }: {
   booking: Booking;
   role: Role;
   direction: KeyHandoverDirection;
+  expanded: boolean;
 }) {
   const { dispatch, state, now } = useStore();
   const handover = booking.keys[direction];
@@ -44,97 +46,111 @@ export function KeyHandoverPanel({
 
   if (handover.status === "done") {
     return (
-      <Step title={title} state="done">
-        <StepNote>
-          {handover.method && methodLabel(handover.method)}
-          {handover.meetingAt && `, ${formatDateTime(handover.meetingAt)}`} — confirmed by both
-          sides.
-        </StepNote>
-      </Step>
+      <Step
+        title={title}
+        state="done"
+        record={`${handover.method ? methodLabel(handover.method) : ""}${
+          handover.meetingAt ? `, ${formatDateTime(handover.meetingAt)}` : ""
+        } — confirmed by both sides.`}
+      />
     );
   }
 
+  const record =
+    handover.status === "proposed"
+      ? `${handover.method ? methodLabel(handover.method) : ""}${
+          handover.meetingAt ? `, ${formatDateTime(handover.meetingAt)}` : ""
+        }${handover.details ? ` — ${handover.details}` : ""}`
+      : undefined;
+
   return (
-    <Step title={title} state={handover.status === "proposed" ? "waiting" : "todo"}>
-      {handover.status === "proposed" && (
+    <Step
+      title={title}
+      state={expanded ? "current" : "future"}
+      record={record}
+      reason={proposeGuard.allowed ? undefined : proposeGuard.reason}
+    >
+      {expanded && (
         <>
-          <StepNote>
-            {handover.method && methodLabel(handover.method)}
-            {handover.meetingAt && `, ${formatDateTime(handover.meetingAt)}`}
-            {handover.details && ` — ${handover.details}`}
-          </StepNote>
-          <StepNote>
-            <strong>Waiting on {awaitingLabel(awaiting)} to confirm.</strong> With only one side
-            confirmed, the handoff hasn't happened.
-          </StepNote>
+          {handover.status === "proposed" && (
+            <StepNote>
+              <strong>Waiting on {awaitingLabel(awaiting)} to confirm.</strong> With only one side
+              confirmed, the handoff hasn't happened.
+            </StepNote>
+          )}
+
+          {handover.status === "proposed" && (
+            <div>
+              <GuardedButton
+                guard={confirmGuard}
+                onClick={() =>
+                  dispatch({
+                    type: "KeyHandoverConfirmed",
+                    bookingId: booking.id,
+                    direction,
+                    by: role,
+                  })
+                }
+              >
+                Confirm the handoff
+              </GuardedButton>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3">
+            <Field label="Method">
+              <select
+                value={method}
+                onChange={(event) => setMethod(event.target.value as KeyHandoverMethod)}
+                className={inputClass}
+              >
+                {METHODS.map((item) => (
+                  <option key={item} value={item}>
+                    {methodLabel(item)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="When">
+              <input
+                type="datetime-local"
+                value={meetingAt}
+                onChange={(event) => setMeetingAt(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Where / details">
+              <input
+                type="text"
+                value={details}
+                placeholder="e.g. lockbox on the gate"
+                onChange={(event) => setDetails(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+
+          <div>
+            <GuardedButton
+              tone="neutral"
+              guard={proposeGuard}
+              onClick={() =>
+                dispatch({
+                  type: "KeyHandoverProposed",
+                  bookingId: booking.id,
+                  direction,
+                  by: role,
+                  method,
+                  meetingAt: fromDateTimeInput(meetingAt),
+                  details: details.trim() || undefined,
+                })
+              }
+            >
+              {handover.status === "proposed" ? "Propose something else" : "Propose a handoff"}
+            </GuardedButton>
+          </div>
         </>
       )}
-
-      <div className="flex flex-wrap items-start gap-3">
-        {handover.status === "proposed" && (
-          <GuardedButton
-            guard={confirmGuard}
-            onClick={() =>
-              dispatch({ type: "KeyHandoverConfirmed", bookingId: booking.id, direction, by: role })
-            }
-          >
-            Confirm the handoff
-          </GuardedButton>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="Method">
-          <select
-            value={method}
-            onChange={(event) => setMethod(event.target.value as KeyHandoverMethod)}
-            className={inputClass}
-          >
-            {METHODS.map((item) => (
-              <option key={item} value={item}>
-                {methodLabel(item)}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="When">
-          <input
-            type="datetime-local"
-            value={meetingAt}
-            onChange={(event) => setMeetingAt(event.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Where / details">
-          <input
-            type="text"
-            value={details}
-            placeholder="e.g. lockbox on the gate"
-            onChange={(event) => setDetails(event.target.value)}
-            className={inputClass}
-          />
-        </Field>
-      </div>
-
-      <div>
-        <GuardedButton
-          tone="neutral"
-          guard={proposeGuard}
-          onClick={() =>
-            dispatch({
-              type: "KeyHandoverProposed",
-              bookingId: booking.id,
-              direction,
-              by: role,
-              method,
-              meetingAt: fromDateTimeInput(meetingAt),
-              details: details.trim() || undefined,
-            })
-          }
-        >
-          {handover.status === "proposed" ? "Propose something else" : "Propose a handoff"}
-        </GuardedButton>
-      </div>
     </Step>
   );
 }

@@ -7,7 +7,7 @@ import { SLOTS_OF_DAY } from "../domain/types";
 import type { IsoDate, SlotOfDay } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { formatDateRange, plural, slotLabel } from "../app/format";
-import { Card, SectionTitle } from "../app/ui";
+import { Card } from "../app/ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -34,7 +34,17 @@ export function BookingCalendar() {
   const totalMinor = quoteTotalMinor(sitter.ratePerVisitMinor, visits);
   const overlaps =
     start && end ? eachDate(start, end).some((date) => busyDates.has(date)) : false;
-  const canSubmit = Boolean(start && end && slots.length > 0 && !overlaps);
+  // Причина, а не просто «нельзя»: отправка блокируется с объяснением, как и
+  // любое другое недоступное действие в прототипе.
+  const blocked = !start
+    ? "Pick the first day of the stay"
+    : !end
+      ? "Pick the last day of the stay"
+      : overlaps
+        ? "Some days in this range are already booked"
+        : slots.length === 0
+          ? "Pick at least one visit a day"
+          : null;
 
   function pickDate(date: IsoDate) {
     if (!start || (start && end)) {
@@ -75,11 +85,9 @@ export function BookingCalendar() {
 
   return (
     <section>
-      <SectionTitle
-        hint={`${sitter.name} charges ${formatMoney(sitter.ratePerVisitMinor)} a visit · pet: ${pet.name}`}
-      >
-        Booking calendar
-      </SectionTitle>
+      <p className="mb-3 text-sm text-stone-500">
+        {sitter.name} charges {formatMoney(sitter.ratePerVisitMinor)} a visit · pet: {pet.name}
+      </p>
       <Card>
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setMonth(shiftMonth(month, -1))} className={navClass}>
@@ -131,33 +139,31 @@ export function BookingCalendar() {
           </div>
         </fieldset>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
-          <p className="text-sm text-stone-600">{summary()}</p>
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={submit}
-            className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
-          >
-            Send request
-          </button>
-        </div>
       </Card>
+
+      {/* Итог закреплён внизу: он пересчитывается на глазах по мере выбора,
+          а не открывается в конце отдельным шагом. */}
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
+        {blocked ? (
+          <p className="text-sm text-stone-500">{blocked}</p>
+        ) : (
+          <p className="text-sm text-stone-600">
+            {formatDateRange(start!, end!)} · {plural(visits, "visit")} ×{" "}
+            {formatMoney(sitter.ratePerVisitMinor)} ·{" "}
+            <strong className="text-stone-900">{formatMoney(totalMinor)}</strong>
+          </p>
+        )}
+        <button
+          type="button"
+          disabled={Boolean(blocked)}
+          onClick={submit}
+          className="mt-2 w-full rounded-md bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
+        >
+          Send request
+        </button>
+      </div>
     </section>
   );
-
-  function summary() {
-    if (!start) return "Pick the first day of the stay";
-    if (!end) return `Starting ${formatDateRange(start, start)} — pick the last day`;
-    if (overlaps) return "Some days in this range are already booked";
-    if (slots.length === 0) return "Pick at least one visit a day";
-    return (
-      <>
-        {formatDateRange(start, end)} · {plural(days, "day")} · {plural(visits, "visit")} ×{" "}
-        {formatMoney(sitter.ratePerVisitMinor)} · <strong>{formatMoney(totalMinor)}</strong>
-      </>
-    );
-  }
 }
 
 const navClass =

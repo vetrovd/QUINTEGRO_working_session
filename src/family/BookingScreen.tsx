@@ -1,11 +1,10 @@
 import { canCancelBooking } from "../domain/guards";
 import type { BookingId } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { BookingCard } from "../app/BookingCard";
-import { VisitProgress } from "../app/VisitProgress";
+import { BookingSummary } from "../app/BookingSummary";
 import { routeToHash } from "../app/routes";
 import { EmptyState, GuardedButton, ScreenTitle } from "../app/ui";
-import { BookingSteps } from "../booking/BookingSteps";
+import { BookingTimeline } from "../booking/BookingTimeline";
 
 export function FamilyBookingScreen({ bookingId }: { bookingId: BookingId }) {
   const { state, dispatch } = useStore();
@@ -24,22 +23,22 @@ export function FamilyBookingScreen({ bookingId }: { bookingId: BookingId }) {
   return (
     <>
       <ScreenTitle back={back}>Booking</ScreenTitle>
-      <BookingCard
-        booking={booking}
-        state={state}
-        actions={
-          <GuardedButton
-            tone="danger"
-            guard={canCancelBooking(state, booking.id)}
-            onClick={() => dispatch({ type: "BookingCancelled", bookingId: booking.id })}
-          >
-            Cancel booking
-          </GuardedButton>
-        }
-      >
-        <VisitProgress state={state} bookingId={booking.id} />
-        <BookingSteps booking={booking} role="family" />
-      </BookingCard>
+
+      <BookingSummary booking={booking} state={state} counterpart="sitter" />
+
+      <div className="mt-6">
+        <BookingTimeline booking={booking} role="family" />
+      </div>
+
+      <div className="mt-6 border-t border-stone-200 pt-4">
+        <GuardedButton
+          tone="danger"
+          guard={canCancelBooking(state, booking.id)}
+          onClick={() => dispatch({ type: "BookingCancelled", bookingId: booking.id })}
+        >
+          Cancel booking
+        </GuardedButton>
+      </div>
     </>
   );
 }

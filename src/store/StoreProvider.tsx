@@ -20,7 +20,7 @@ const STORAGE_KEY = "pet-sitting-prototype";
  *  загрузится как валидное и упадёт на отсутствующей коллекции. Версия 5 —
  *  смена рынка: сид-данные и валюта лежат в сохранённом состоянии, и без
  *  подъёма версии у всех, кто уже открывал демку, остались бы рубли. */
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 const REQUIRED_COLLECTIONS = [
   "families",
   "sitters",

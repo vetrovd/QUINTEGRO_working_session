@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { addDays, countDays, eachDate, parseIsoDate, toIsoDate, today } from "../domain/dates";
-import { LOCALE, dollarsToMinor, formatMoney } from "../domain/money";
+import { LOCALE, formatMoney } from "../domain/money";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "../domain/seed";
 import { SLOTS_OF_DAY } from "../domain/types";
 import type { IsoDate, SlotOfDay } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { formatDateRange, plural, slotLabel } from "../app/format";
-import { Card, Field, SectionTitle, inputClass } from "../app/ui";
+import { Card, SectionTitle } from "../app/ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -25,16 +25,15 @@ export function BookingCalendar() {
   const [start, setStart] = useState<IsoDate | null>(currentDate);
   const [end, setEnd] = useState<IsoDate | null>(addDays(currentDate, 4));
   const [slots, setSlots] = useState<SlotOfDay[]>(["morning", "evening"]);
-  const [rateDollars, setRateDollars] = useState(20);
 
   const busyDates = useMemo(() => busyDatesOf(state), [state]);
 
   const days = start && end ? countDays(start, end) : 0;
   const visits = days * slots.length;
-  const totalMinor = visits * dollarsToMinor(rateDollars);
+  const totalMinor = visits * sitter.ratePerVisitMinor;
   const overlaps =
     start && end ? eachDate(start, end).some((date) => busyDates.has(date)) : false;
-  const canSubmit = Boolean(start && end && slots.length > 0 && rateDollars > 0 && !overlaps);
+  const canSubmit = Boolean(start && end && slots.length > 0 && !overlaps);
 
   function pickDate(date: IsoDate) {
     if (!start || (start && end)) {
@@ -68,7 +67,6 @@ export function BookingCalendar() {
       startDate: start,
       endDate: end,
       slots,
-      ratePerVisitMinor: dollarsToMinor(rateDollars),
     });
     setStart(null);
     setEnd(null);
@@ -76,7 +74,9 @@ export function BookingCalendar() {
 
   return (
     <section>
-      <SectionTitle hint={`Sitter: ${sitter.name} · pet: ${pet.name}`}>
+      <SectionTitle
+        hint={`${sitter.name} charges ${formatMoney(sitter.ratePerVisitMinor)} a visit · pet: ${pet.name}`}
+      >
         Booking calendar
       </SectionTitle>
       <Card>
@@ -113,34 +113,22 @@ export function BookingCalendar() {
           )}
         </div>
 
-        <div className="mt-4 grid gap-4 border-t border-stone-200 pt-4 sm:grid-cols-2">
-          <fieldset>
-            <legend className="text-sm font-medium text-stone-700">Visits a day</legend>
-            <div className="mt-2 flex flex-wrap gap-3">
-              {SLOTS_OF_DAY.map((slot) => (
-                <label key={slot} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={slots.includes(slot)}
-                    onChange={() => toggleSlot(slot)}
-                    className="size-4 accent-stone-900"
-                  />
-                  {slotLabel(slot)}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <Field label="Rate per visit, $">
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={rateDollars}
-              onChange={(event) => setRateDollars(Number(event.target.value))}
-              className={inputClass}
-            />
-          </Field>
-        </div>
+        <fieldset className="mt-4 border-t border-stone-200 pt-4">
+          <legend className="text-sm font-medium text-stone-700">Visits a day</legend>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {SLOTS_OF_DAY.map((slot) => (
+              <label key={slot} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={slots.includes(slot)}
+                  onChange={() => toggleSlot(slot)}
+                  className="size-4 accent-stone-900"
+                />
+                {slotLabel(slot)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4">
           <p className="text-sm text-stone-600">{summary()}</p>
@@ -164,8 +152,8 @@ export function BookingCalendar() {
     if (slots.length === 0) return "Pick at least one visit a day";
     return (
       <>
-        {formatDateRange(start, end)} · {plural(days, "day")} · {plural(visits, "visit")} ·{" "}
-        <strong>{formatMoney(totalMinor)}</strong>
+        {formatDateRange(start, end)} · {plural(days, "day")} · {plural(visits, "visit")} ×{" "}
+        {formatMoney(sitter.ratePerVisitMinor)} · <strong>{formatMoney(totalMinor)}</strong>
       </>
     );
   }

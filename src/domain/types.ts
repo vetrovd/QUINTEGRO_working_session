@@ -23,6 +23,9 @@ export interface Family {
 export interface Sitter {
   id: SitterId;
   name: string;
+  /** Опубликованная цена одного визита. Booking замораживает её копию в
+   *  момент запроса — Family цену не назначает (ADR 0003). */
+  ratePerVisitMinor: number;
 }
 
 export const CARE_TASKS = ["feeding", "water", "litter", "walk", "meds"] as const;
@@ -177,7 +180,6 @@ export type DomainEvent =
       startDate: IsoDate;
       endDate: IsoDate;
       slots: SlotOfDay[];
-      ratePerVisitMinor: number;
     }
   | { type: "BookingAccepted"; bookingId: BookingId }
   | { type: "BookingDeclined"; bookingId: BookingId; reason?: string }

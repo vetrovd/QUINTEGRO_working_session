@@ -51,6 +51,10 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
       if (state.bookings[event.bookingId]) {
         return reject(state, event, ctx, "A booking with this id already exists");
       }
+      // Ставку публикует ситтер: бронь замораживает его цену в момент запроса,
+      // и позже она уже не переоценивается (ADR 0003).
+      const sitter = state.sitters[event.sitterId];
+      if (!sitter) return reject(state, event, ctx, "Sitter not found");
       const booking: Booking = {
         id: event.bookingId,
         familyId: event.familyId,
@@ -59,7 +63,7 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         startDate: event.startDate,
         endDate: event.endDate,
         slots: event.slots,
-        ratePerVisitMinor: event.ratePerVisitMinor,
+        ratePerVisitMinor: sitter.ratePerVisitMinor,
         status: "requested",
         meetGreet: initialMeetGreet(state, event.familyId, event.sitterId),
         keys: { handover: initialKeyHandover(), return: initialKeyHandover() },

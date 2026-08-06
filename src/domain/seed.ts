@@ -1,3 +1,4 @@
+import { dollarsToMinor } from "./money";
 import type { DomainState } from "./types";
 
 export const SEED_NOW = "2026-08-05T09:00:00.000Z";
@@ -13,7 +14,7 @@ export function createSeedState(): DomainState {
       },
     },
     sitters: {
-      "sitter-1": { id: "sitter-1", name: "Nora Alvarez" },
+      "sitter-1": { id: "sitter-1", name: "Nora Alvarez", ratePerVisitMinor: dollarsToMinor(20) },
     },
     pets: {
       "pet-1": {

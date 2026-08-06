@@ -41,6 +41,35 @@ describe("запрос брони", () => {
     expect(Object.keys(state.bookings)).toHaveLength(1);
     expect(lastRejection(state)).toBeDefined();
   });
+
+  /**
+   * ADR 0003: цену публикует Sitter, Family её не назначает. Событие запроса
+   * суммы не несёт — передать другую цену из интерфейса просто нечем.
+   */
+  it("берёт ставку из ситтера, а не из события", () => {
+    const state = createSeedState();
+    state.sitters[SEED_SITTER_ID].ratePerVisitMinor = 3_500;
+
+    expect(booking(reduce(state, bookingRequested, CTX)).ratePerVisitMinor).toBe(3_500);
+  });
+
+  it("замораживает ставку на брони: изменение ставки ситтера её не переоценивает", () => {
+    const state = requested();
+    state.sitters[SEED_SITTER_ID].ratePerVisitMinor = 9_900;
+
+    expect(booking(state).ratePerVisitMinor).toBe(2_000);
+  });
+
+  it("отклоняет запрос неизвестному ситтеру, а не падает на нём", () => {
+    const state = reduce(
+      createSeedState(),
+      { ...bookingRequested, sitterId: "sitter-does-not-exist" },
+      CTX,
+    );
+
+    expect(Object.keys(state.bookings)).toHaveLength(0);
+    expect(lastRejection(state)).toBe("Sitter not found");
+  });
 });
 
 describe("ответ ситтера", () => {

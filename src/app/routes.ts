@@ -12,7 +12,9 @@ export type Route =
   | { role: "sitter"; screen: "bookings" }
   | { role: "sitter"; screen: "booking"; bookingId: BookingId }
   | { role: "sitter"; screen: "schedule" }
-  | { role: "sitter"; screen: "earnings" };
+  // Бронь в адресе Earnings — это переход «из работы в деньги»: раздел
+  // открывается на её строке и переживает перезагрузку вместе с ней.
+  | { role: "sitter"; screen: "earnings"; bookingId?: BookingId };
 
 const FAMILY_HOME: Route = { role: "family", screen: "bookings" };
 const SITTER_HOME: Route = { role: "sitter", screen: "bookings" };
@@ -30,6 +32,8 @@ export function routeToHash(route: Route): string {
       return "#/family/bookings/new";
     case "booking":
       return `#/${route.role}/bookings/${route.bookingId}`;
+    case "earnings":
+      return route.bookingId ? `#/sitter/earnings/${route.bookingId}` : "#/sitter/earnings";
     default:
       return `#/${route.role}/${route.screen}`;
   }
@@ -51,7 +55,7 @@ function familyRoute([screen, id]: string[]): Route {
 
 function sitterRoute([screen, id]: string[]): Route {
   if (screen === "schedule") return { role: "sitter", screen: "schedule" };
-  if (screen === "earnings") return { role: "sitter", screen: "earnings" };
+  if (screen === "earnings") return { role: "sitter", screen: "earnings", bookingId: id };
   if (screen === "bookings" && id) return { role: "sitter", screen: "booking", bookingId: id };
   return SITTER_HOME;
 }

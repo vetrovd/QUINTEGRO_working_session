@@ -3,17 +3,24 @@ import {
   balanceOfSitter,
   bookingTotalMinor,
   earnedTotalMinor,
+  earningsByBooking,
   earningsOfBooking,
+  lockReasonOf,
   plannedTotalMinor,
 } from "./earnings";
 import {
   BOOKING_ID,
   CTX,
   TODAY,
+  TODAY_EVENING,
+  TODAY_MORNING,
   checkedIn,
   closed,
+  closedTwoVisits,
   completeVisit,
   confirmed,
+  disputed,
+  handbackRequested,
   readyToStart,
   requested,
   RATE,
@@ -173,5 +180,61 @@ describe("начислено против плана", () => {
     const cancelled = reduce(confirmed(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
 
     expect(bookingTotalMinor(cancelled, BOOKING_ID)).toBe(0);
+  });
+});
+
+describe("разбивка по броням", () => {
+  it("собирает начисления брони в одну строку с итогом", () => {
+    const [row] = earningsByBooking(closedTwoVisits(), SEED_SITTER_ID);
+
+    expect(row.bookingId).toBe(BOOKING_ID);
+    expect(row.total.count).toBe(2);
+    expect(row.total.grossMinor).toBe(2 * RATE);
+    expect(row.items.map((item) => item.visitId)).toEqual([TODAY_MORNING, TODAY_EVENING]);
+  });
+
+  it("бронь без начислений в разбивку не попадает — показывать в деньгах нечего", () => {
+    expect(earningsByBooking(requested(), SEED_SITTER_ID)).toEqual([]);
+    expect(earningsByBooking(readyToStart(), SEED_SITTER_ID)).toEqual([]);
+  });
+
+  it("частичный вывод разносит начисления одной брони по разным частям", () => {
+    const state = reduce(
+      closedTwoVisits(),
+      {
+        type: "PayoutRequested",
+        payoutId: "payout-1",
+        sitterId: SEED_SITTER_ID,
+        visitIds: [TODAY_MORNING],
+      },
+      CTX,
+    );
+    const [row] = earningsByBooking(state, SEED_SITTER_ID);
+
+    expect(row.parts.paidOut.count).toBe(1);
+    expect(row.parts.available.count).toBe(1);
+    expect(row.parts.locked.count).toBe(0);
+    expect(row.total.netMinor).toBe(row.parts.paidOut.netMinor + row.parts.available.netMinor);
+  });
+});
+
+describe("что удерживает деньги", () => {
+  it("у незакрытой брони — подтверждение закрытия семьёй", () => {
+    const state = completeVisit(readyToStart(), TODAY_MORNING);
+
+    expect(lockReasonOf(state, BOOKING_ID)).toMatch(/confirms the closing/);
+  });
+
+  it("после заявки на сдачу ход за семьёй, и это сказано иначе", () => {
+    expect(lockReasonOf(handbackRequested(), BOOKING_ID)).toMatch(/Waiting on the family/);
+  });
+
+  /** Обещание «семья подтвердит» для спора неверно: подтверждать уже отказались. */
+  it("спор объясняется отдельно", () => {
+    expect(lockReasonOf(disputed(), BOOKING_ID)).toMatch(/disputed/);
+  });
+
+  it("у закрытой брони удерживать нечего", () => {
+    expect(lockReasonOf(closed(), BOOKING_ID)).toBeUndefined();
   });
 });

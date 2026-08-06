@@ -151,7 +151,7 @@ describe("история выводов", () => {
     expect(record.paidAt).toBe(NOW);
     expect(record.grossMinor).toBe(2 * RATE);
     expect(record.netMinor).toBe(2 * netMinor(RATE));
-    expect(record.earnings.map((earning) => earning.visitId)).toEqual([
+    expect(record.items.map((earning) => earning.visitId)).toEqual([
       TODAY_MORNING,
       TODAY_EVENING,
     ]);

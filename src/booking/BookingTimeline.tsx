@@ -2,9 +2,10 @@ import { canStartCare } from "../domain/guards";
 import { timelineOf } from "../domain/timeline";
 import type { StepPhase } from "../domain/timeline";
 import { visitsOfBooking } from "../domain/visits";
-import type { Booking, Role } from "../domain/types";
+import type { Booking, DomainState, Role } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { formatDateTime } from "../app/format";
+import { formatDateTime, plural } from "../app/format";
+import { routeToHash } from "../app/routes";
 import { HandbackPanel } from "./HandbackPanel";
 import { KeyHandoverPanel } from "./KeyHandoverPanel";
 import { MeetGreetPanel } from "./MeetGreetPanel";
@@ -107,14 +108,43 @@ function CareStep({
       state={phase === "deadEnd" ? "blocked" : phase}
       reason={guard.allowed ? undefined : guard.reason}
     >
-      {started && (
-        <>
-          {role === "sitter" && (
-            <StepNote>Check in and file reports from the Schedule tab.</StepNote>
-          )}
-          <VisitFeed bookingId={booking.id} role={role} />
-        </>
-      )}
+      {role === "sitter" && <VisitTally booking={booking} state={state} />}
+      {started && <VisitFeed bookingId={booking.id} role={role} />}
     </Step>
+  );
+}
+
+/**
+ * Для ситтера визиты здесь — запись, а не работа: сколько их, сколько закрыто
+ * и сколько осталось. Ни одной кнопки: приход, пропуск и отчёт живут в
+ * расписании, и у действия не должно быть двух домов — только переход туда.
+ */
+function VisitTally({ booking, state }: { booking: Booking; state: DomainState }) {
+  const visits = visitsOfBooking(state, booking.id).filter((visit) => visit.status !== "cancelled");
+  if (visits.length === 0) return null;
+
+  const count = (...statuses: string[]) =>
+    visits.filter((visit) => statuses.includes(visit.status)).length;
+  const tally = [
+    [count("completed"), "reported"],
+    [count("missed"), "missed"],
+    [count("scheduled", "checkedIn"), "still ahead"],
+  ] as const;
+
+  return (
+    <StepNote>
+      {plural(visits.length, "visit")} ·{" "}
+      {tally
+        .filter(([number]) => number > 0)
+        .map(([number, label]) => `${number} ${label}`)
+        .join(", ")}
+      .{" "}
+      <a
+        href={routeToHash({ role: "sitter", screen: "schedule" })}
+        className="text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
+      >
+        Check in and file reports in Schedule <span aria-hidden="true" className="ml-0.5">→</span>
+      </a>
+    </StepNote>
   );
 }

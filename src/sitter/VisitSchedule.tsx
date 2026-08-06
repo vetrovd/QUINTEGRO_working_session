@@ -5,7 +5,15 @@ import { SEED_SITTER_ID } from "../domain/seed";
 import type { DomainState, Visit } from "../domain/types";
 import { compareVisits } from "../domain/visits";
 import { useStore } from "../store/StoreProvider";
-import { careTaskLabel, formatDateWithWeekday, formatTime, plural, slotLabel } from "../app/format";
+import {
+  careTaskLabel,
+  formatDateRange,
+  formatDateWithWeekday,
+  formatTime,
+  plural,
+  slotLabel,
+} from "../app/format";
+import { routeToHash } from "../app/routes";
 import { Card, EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
 import { ReportComposer } from "./ReportComposer";
 
@@ -100,6 +108,15 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
           <p className="text-sm text-stone-500">
             {pet.name} · {family.name}, {family.address}
           </p>
+          {/* Визит принадлежит броне, а условия работы обсуждаются там: из
+              карточки должен быть переход, а не поиск по списку. */}
+          <a
+            href={routeToHash({ role: "sitter", screen: "booking", bookingId: booking.id })}
+            className="mt-1 inline-flex text-sm text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
+          >
+            Booking {formatDateRange(booking.startDate, booking.endDate)}{" "}
+            <span aria-hidden="true" className="ml-0.5">→</span>
+          </a>
         </div>
         {visit.checkedInAt && (
           <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">

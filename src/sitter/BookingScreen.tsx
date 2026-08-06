@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { bookingTotalMinor, earningsByBooking, lockReasonOf } from "../domain/earnings";
 import { canRespondToBooking } from "../domain/guards";
-import type { BookingId } from "../domain/types";
+import { formatMoney, netMinor } from "../domain/money";
+import type { Booking, BookingId, DomainState } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { BookingSummary } from "../app/BookingSummary";
+import { plural } from "../app/format";
 import { routeToHash } from "../app/routes";
 import { EmptyState, GuardedButton, ScreenTitle, inputClass } from "../app/ui";
 import { BookingTimeline } from "../booking/BookingTimeline";
+import { PartChips } from "./EarningsBreakdown";
 
 export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
   const { state } = useStore();
@@ -26,6 +30,10 @@ export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
       <ScreenTitle back={back}>Booking</ScreenTitle>
       <BookingSummary booking={booking} state={state} counterpart="family" />
 
+      <div className="mt-3">
+        <PayHeader booking={booking} state={state} />
+      </div>
+
       {booking.status === "requested" && (
         <div className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
           <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
@@ -40,6 +48,56 @@ export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
         <BookingTimeline booking={booking} role="sitter" />
       </div>
     </>
+  );
+}
+
+/**
+ * Что бронь принесёт и в каком состоянии эти деньги — здесь же, в шапке.
+ * Работа и деньги за неё принадлежат разным разделам, поэтому связь между
+ * ними должна быть переходом, а не памятью ситтера.
+ */
+function PayHeader({ booking, state }: { booking: Booking; state: DomainState }) {
+  const row = earningsByBooking(state, booking.sitterId).find(
+    (item) => item.bookingId === booking.id,
+  );
+  const plannedNet = netMinor(bookingTotalMinor(state, booking.id));
+  const lockReason = row && row.parts.locked.count > 0 ? lockReasonOf(state, booking.id) : undefined;
+
+  return (
+    <section className="rounded-lg border border-stone-200 bg-white p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm text-stone-600">{row ? "Earned so far" : "This booking pays"}</p>
+        <p className="text-lg font-semibold tabular-nums text-stone-900">
+          {formatMoney(row ? row.total.netMinor : plannedNet)}
+        </p>
+      </div>
+      <p className="mt-0.5 text-xs text-stone-500">
+        {row
+          ? `take-home from ${plural(row.total.count, "filed visit")} · ${formatMoney(plannedNet)} if every visit happens`
+          : "take-home if every visit happens · an earning appears with every filed report"}
+      </p>
+
+      {row && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <PartChips parts={row.parts} />
+        </div>
+      )}
+
+      {lockReason && (
+        <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">{lockReason}</p>
+      )}
+
+      {/* Ссылка ведёт на строку брони в разбивке, а строка появляется вместе с
+          первым начислением: до него вести некуда, и ссылки нет. */}
+      {row && (
+        <a
+          href={routeToHash({ role: "sitter", screen: "earnings", bookingId: booking.id })}
+          className="mt-3 inline-flex text-sm text-stone-500 transition hover:text-stone-900"
+        >
+          See it in Earnings <span aria-hidden="true" className="ml-0.5">→</span>
+        </a>
+      )}
+    </section>
   );
 }
 

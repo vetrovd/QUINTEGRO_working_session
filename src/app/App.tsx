@@ -10,6 +10,7 @@ import { PhoneFrame } from "./PhoneFrame";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { SitterNav } from "./SitterNav";
 import { useRoute } from "./useRoute";
+import { routeToHash } from "./routes";
 import type { Route } from "./routes";
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
             </>
           }
           nav={route.role === "sitter" ? <SitterNav route={route} /> : null}
+          screenKey={routeToHash(route)}
         >
           <Screen route={route} />
         </PhoneFrame>
@@ -62,6 +64,6 @@ function Screen({ route }: { route: Route }) {
     case "schedule":
       return <ScheduleScreen />;
     case "earnings":
-      return <EarningsScreen />;
+      return <EarningsScreen focusBookingId={route.bookingId} />;
   }
 }

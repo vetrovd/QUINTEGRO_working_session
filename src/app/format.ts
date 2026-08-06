@@ -1,4 +1,5 @@
 import { SLOT_TIMES, parseIsoDate } from "../domain/dates";
+import type { EarningStatus } from "../domain/earnings";
 import { LOCALE } from "../domain/money";
 import type {
   BookingStatus,
@@ -56,6 +57,13 @@ const VISIT_LABELS: Record<VisitStatus, string> = {
   completed: "Report filed",
   missed: "Missed",
   cancelled: "Canceled",
+};
+
+/** Части баланса называются одинаково везде: иначе они читаются как разные величины. */
+const EARNING_LABELS: Record<EarningStatus, string> = {
+  locked: "Locked",
+  available: "Available",
+  paidOut: "Cashed out",
 };
 
 const CARE_TASK_LABELS: Record<CareTask, string> = {
@@ -154,6 +162,10 @@ export function visitStatusText(status: VisitStatus): string {
 
 export function careTaskLabel(task: CareTask): string {
   return CARE_TASK_LABELS[task];
+}
+
+export function earningStatusText(status: EarningStatus): string {
+  return EARNING_LABELS[status];
 }
 
 export function awaitingLabel(roles: Role[]): string {

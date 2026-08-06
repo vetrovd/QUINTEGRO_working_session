@@ -37,6 +37,14 @@ export interface Bucket {
 
 export type Balance = Record<EarningStatus, Bucket>;
 
+/** Заработок одной брони: сколько она принесла и в каком состоянии деньги. */
+export interface BookingEarnings {
+  bookingId: BookingId;
+  items: Earning[];
+  total: Bucket;
+  parts: Balance;
+}
+
 /**
  * Начисления — проекция завершённых визитов, а не отдельная коллекция.
  * Поэтому «на один завершённый визит ровно один Earning» выполняется
@@ -86,11 +94,53 @@ export function earningsOfSitter(state: DomainState, sitterId: SitterId): Earnin
 }
 
 export function balanceOfSitter(state: DomainState, sitterId: SitterId): Balance {
-  const earnings = earningsOfSitter(state, sitterId);
+  return splitByStatus(earningsOfSitter(state, sitterId));
+}
+
+/**
+ * Разбивка заработка по броням — новые сверху, как и в списке броней. Это
+ * единственное место, где видно, что заблокированное и доступное складываются
+ * из разных броней: баланс их уже сложил и потерял происхождение.
+ */
+export function earningsByBooking(state: DomainState, sitterId: SitterId): BookingEarnings[] {
+  return Object.values(state.bookings)
+    .filter((booking) => booking.sitterId === sitterId)
+    .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
+    .map((booking) => ({ bookingId: booking.id, items: earningsOfBooking(state, booking.id) }))
+    .filter((row) => row.items.length > 0)
+    .map((row) => ({
+      ...row,
+      total: bucketOf(row.items),
+      parts: splitByStatus(row.items),
+    }));
+}
+
+/**
+ * Что удерживает деньги этой брони. Правило разблокировки одно (ADR 0001), но
+ * ситтеру нужно знать не правило, а свой следующий шаг, — поэтому причина
+ * формулируется в терминах состояния конкретной брони.
+ */
+export function lockReasonOf(state: DomainState, bookingId: BookingId): string | undefined {
+  const booking = state.bookings[bookingId];
+  if (!booking) return undefined;
+
+  switch (booking.status) {
+    case "completed":
+      return undefined;
+    case "disputed":
+      return "The family disputed the closing — this stays locked until it's reviewed";
+    case "awaitingHandback":
+      return "Waiting on the family to confirm the closing";
+    default:
+      return "Unlocks once you submit the work and the family confirms the closing";
+  }
+}
+
+function splitByStatus(earnings: Earning[]): Balance {
   return {
-    locked: bucket(earnings.filter((earning) => earning.status === "locked")),
-    available: bucket(earnings.filter((earning) => earning.status === "available")),
-    paidOut: bucket(earnings.filter((earning) => earning.status === "paidOut")),
+    locked: bucketOf(earnings.filter((earning) => earning.status === "locked")),
+    available: bucketOf(earnings.filter((earning) => earning.status === "available")),
+    paidOut: bucketOf(earnings.filter((earning) => earning.status === "paidOut")),
   };
 }
 
@@ -141,7 +191,8 @@ function earningStatus(booking: Booking, paidOut: boolean): EarningStatus {
   return booking.status === "completed" ? "available" : "locked";
 }
 
-function bucket(items: Earning[]): Bucket {
+/** Суммы набора начислений — те же три величины, что и у любой части баланса. */
+export function bucketOf(items: Earning[]): Bucket {
   return {
     count: items.length,
     grossMinor: items.reduce((total, item) => total + item.grossMinor, 0),

@@ -9,9 +9,17 @@ import {
   readyToStart,
   run,
 } from "./fixtures";
-import { canMarkReportRead, canSaveVisitReport, canSubmitVisitReport } from "./guards";
+import {
+  canMarkReportRead,
+  canSaveVisitReport,
+  canSubmitVisitReport,
+} from "./guards";
 import { reduce } from "./reducer";
-import { submittedReportsOfBooking, unreadReportsCount, visitsAwaitingReport } from "./reports";
+import {
+  submittedReportsOfBooking,
+  unreadReportsCount,
+  visitsAwaitingReport,
+} from "./reports";
 import type { DomainEvent } from "./types";
 
 const save = (
@@ -25,8 +33,14 @@ const save = (
   ...overrides,
 });
 
-const submit: DomainEvent = { type: "VisitReportSubmitted", visitId: TODAY_MORNING };
-const markRead: DomainEvent = { type: "VisitReportRead", visitId: TODAY_MORNING };
+const submit: DomainEvent = {
+  type: "VisitReportSubmitted",
+  visitId: TODAY_MORNING,
+};
+const markRead: DomainEvent = {
+  type: "VisitReportRead",
+  visitId: TODAY_MORNING,
+};
 
 function report(state: ReturnType<typeof checkedIn>) {
   return state.reports[TODAY_MORNING];
@@ -36,7 +50,7 @@ describe("черновик отчёта", () => {
   it("нельзя заполнять отчёт до отметки прихода", () => {
     expect(canSaveVisitReport(readyToStart(), TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Сначала отметьте приход на визит",
+      reason: "Check in to the visit first",
     });
 
     const state = reduce(readyToStart(), save(), CTX);
@@ -47,7 +61,13 @@ describe("черновик отчёта", () => {
 
   it("сохраняется и перезаписывается, не завершая визит", () => {
     const state = run(
-      [save(), save({ note: "Дополнил: сменил воду", tasks: ["feeding", "water", "litter"] })],
+      [
+        save(),
+        save({
+          note: "Дополнил: сменил воду",
+          tasks: ["feeding", "water", "litter"],
+        }),
+      ],
       checkedIn(),
     );
 
@@ -70,29 +90,42 @@ describe("отправка отчёта", () => {
   it("завершает визит и фиксирует время", () => {
     const state = run([save(), submit], checkedIn());
 
-    expect(report(state)).toMatchObject({ status: "submitted", submittedAt: NOW });
-    expect(state.visits[TODAY_MORNING]).toMatchObject({ status: "completed", completedAt: NOW });
+    expect(report(state)).toMatchObject({
+      status: "submitted",
+      submittedAt: NOW,
+    });
+    expect(state.visits[TODAY_MORNING]).toMatchObject({
+      status: "completed",
+      completedAt: NOW,
+    });
   });
 
   it("невозможна без черновика", () => {
     const state = reduce(checkedIn(), submit, CTX);
 
-    expect(lastRejection(state)).toBe("Заполните отчёт перед отправкой");
+    expect(lastRejection(state)).toBe("Fill in the report before sending it");
     expect(state.visits[TODAY_MORNING].status).toBe("checkedIn");
   });
 
   it("невозможна для пустого отчёта", () => {
-    const empty = reduce(checkedIn(), save({ tasks: [], note: "   ", photos: [] }), CTX);
+    const empty = reduce(
+      checkedIn(),
+      save({ tasks: [], note: "   ", photos: [] }),
+      CTX,
+    );
 
     expect(canSubmitVisitReport(empty, TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Отметьте выполненные задачи, приложите фото или напишите заметку",
+      reason: "Check off what you did, add a photo, or write a note",
     });
   });
 
   it("проходит, если из содержимого есть только фото", () => {
     const state = run(
-      [save({ tasks: [], note: "", photos: ["data:image/jpeg;base64,AAA"] }), submit],
+      [
+        save({ tasks: [], note: "", photos: ["data:image/jpeg;base64,AAA"] }),
+        submit,
+      ],
       checkedIn(),
     );
 
@@ -106,22 +139,30 @@ describe("неизменяемость отправленного отчёта",
     const state = reduce(submitted, save({ note: "Задним числом" }), CTX);
 
     expect(report(state).note).toBe("Барсик поел, вылез из-под дивана");
-    expect(lastRejection(state)).toBe("Отчёт отправлен — изменить его нельзя");
+    expect(lastRejection(state)).toBe(
+      "The report is sent — it can't be changed",
+    );
   });
 
   it("повторная отправка отклоняется", () => {
     const submitted = run([save(), submit], checkedIn());
     const state = reduce(submitted, submit, CTX);
 
-    expect(lastRejection(state)).toBe("Отчёт отправлен — изменить его нельзя");
+    expect(lastRejection(state)).toBe(
+      "The report is sent — it can't be changed",
+    );
   });
 
   it("завершённый визит нельзя отметить пришедшим заново", () => {
     const submitted = run([save(), submit], checkedIn());
-    const state = reduce(submitted, { type: "VisitCheckedIn", visitId: TODAY_MORNING }, CTX);
+    const state = reduce(
+      submitted,
+      { type: "VisitCheckedIn", visitId: TODAY_MORNING },
+      CTX,
+    );
 
     expect(state.visits[TODAY_MORNING].status).toBe("completed");
-    expect(lastRejection(state)).toBe("Визит уже завершён");
+    expect(lastRejection(state)).toBe("This visit is already done");
   });
 });
 
@@ -152,21 +193,21 @@ describe("лента семьи", () => {
 
     expect(canMarkReportRead(draft, TODAY_MORNING)).toMatchObject({
       allowed: false,
-      reason: "Отчёт ещё не сдан",
+      reason: "The report isn't filed yet",
     });
 
     const read = run([submit, markRead], draft);
     const again = reduce(read, markRead, CTX);
 
-    expect(lastRejection(again)).toBe("Отчёт уже прочитан");
+    expect(lastRejection(again)).toBe("This report is already read");
   });
 
   it("визит без сданного отчёта остаётся в списке ожидающих", () => {
     const state = reduce(checkedIn(), save(), CTX);
 
-    expect(visitsAwaitingReport(state, BOOKING_ID).map((visit) => visit.id)).toEqual([
-      TODAY_MORNING,
-    ]);
+    expect(
+      visitsAwaitingReport(state, BOOKING_ID).map((visit) => visit.id),
+    ).toEqual([TODAY_MORNING]);
 
     const submitted = reduce(state, submit, CTX);
 

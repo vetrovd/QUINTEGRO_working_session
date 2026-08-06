@@ -14,6 +14,16 @@ export type Role = "family" | "sitter";
 export const SLOTS_OF_DAY = ["morning", "midday", "evening"] as const;
 export type SlotOfDay = (typeof SLOTS_OF_DAY)[number];
 
+/**
+ * Заявка на бронь, пока её ещё собирают: даты могут быть не выбраны. Отдельный
+ * тип нужен, чтобы guard проверял её до того, как появится событие.
+ */
+export interface BookingDraft {
+  startDate: IsoDate | null;
+  endDate: IsoDate | null;
+  slots: readonly SlotOfDay[];
+}
+
 export interface Family {
   id: FamilyId;
   name: string;
@@ -23,6 +33,9 @@ export interface Family {
 export interface Sitter {
   id: SitterId;
   name: string;
+  /** Опубликованная цена одного визита. Booking замораживает её копию в
+   *  момент запроса — Family цену не назначает (ADR 0003). */
+  ratePerVisitMinor: number;
 }
 
 export const CARE_TASKS = ["feeding", "water", "litter", "walk", "meds"] as const;
@@ -177,7 +190,6 @@ export type DomainEvent =
       startDate: IsoDate;
       endDate: IsoDate;
       slots: SlotOfDay[];
-      ratePerVisitMinor: number;
     }
   | { type: "BookingAccepted"; bookingId: BookingId }
   | { type: "BookingDeclined"; bookingId: BookingId; reason?: string }

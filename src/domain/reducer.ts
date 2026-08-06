@@ -49,8 +49,14 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
   switch (event.type) {
     case "BookingRequested": {
       if (state.bookings[event.bookingId]) {
-        return reject(state, event, ctx, "Бронь с таким идентификатором уже существует");
+        return reject(state, event, ctx, "A booking with this id already exists");
       }
+      // Ставку публикует ситтер: бронь замораживает его цену в момент запроса,
+      // и позже она уже не переоценивается (ADR 0003). Ситтера проверяем
+      // потому, что разыменовываем: семью и питомца редьюсер только сравнивает
+      // по идентификатору, падать на них не на чем.
+      const sitter = state.sitters[event.sitterId];
+      if (!sitter) return reject(state, event, ctx, "Sitter not found");
       const booking: Booking = {
         id: event.bookingId,
         familyId: event.familyId,
@@ -59,7 +65,7 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         startDate: event.startDate,
         endDate: event.endDate,
         slots: event.slots,
-        ratePerVisitMinor: event.ratePerVisitMinor,
+        ratePerVisitMinor: sitter.ratePerVisitMinor,
         status: "requested",
         meetGreet: initialMeetGreet(state, event.familyId, event.sitterId),
         keys: { handover: initialKeyHandover(), return: initialKeyHandover() },
@@ -303,7 +309,7 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
 
     case "PayoutRequested": {
       if (state.payouts[event.payoutId]) {
-        return reject(state, event, ctx, "Вывод с таким идентификатором уже существует");
+        return reject(state, event, ctx, "A payout with this id already exists");
       }
       const guard = canRequestPayout(state, event.sitterId, event.visitIds);
       if (!guard.allowed) return reject(state, event, ctx, guard.reason);

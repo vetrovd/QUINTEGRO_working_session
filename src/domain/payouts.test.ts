@@ -12,6 +12,7 @@ import {
   handbackRequested,
   lastRejection,
   run,
+  RATE,
 } from "./fixtures";
 import { canRequestPayout } from "./guards";
 import { netMinor } from "./money";
@@ -19,8 +20,6 @@ import { payoutsOfSitter } from "./payouts";
 import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
-
-const RATE = 70_000;
 
 const payout = (visitIds: string[], payoutId = "payout-1"): DomainEvent => ({
   type: "PayoutRequested",
@@ -81,7 +80,7 @@ describe("вывести больше доступного нельзя — ин
 
     expect(balance(state).paidOut.count).toBe(0);
     expect(lastRejection(state)).toBe(
-      "Деньги за визит заблокированы — семья не подтвердила закрытие брони",
+      "This visit's money is locked — the family hasn't confirmed closing",
     );
   });
 
@@ -90,51 +89,69 @@ describe("вывести больше доступного нельзя — ин
     const state = reduce(first, payout([TODAY_MORNING], "payout-2"), CTX);
 
     expect(balance(state).paidOut.count).toBe(1);
-    expect(lastRejection(state)).toBe("Деньги за визит уже выведены");
+    expect(lastRejection(state)).toBe(
+      "This visit's money is already cashed out",
+    );
   });
 
   it("визит нельзя удвоить внутри одного вывода", () => {
-    const state = reduce(closedTwoVisits(), payout([TODAY_MORNING, TODAY_MORNING]), CTX);
+    const state = reduce(
+      closedTwoVisits(),
+      payout([TODAY_MORNING, TODAY_MORNING]),
+      CTX,
+    );
 
     expect(Object.keys(state.payouts)).toHaveLength(0);
-    expect(lastRejection(state)).toBe("Визит указан в выводе дважды");
+    expect(lastRejection(state)).toBe("A visit is listed twice");
   });
 
   it("визит без начисления не выводится", () => {
     const state = reduce(closed(), payout([TODAY_EVENING]), CTX);
 
-    expect(lastRejection(state)).toBe("По визиту нет начисления");
+    expect(lastRejection(state)).toBe("This visit has no earning");
   });
 
   it("пустой вывод отклоняется", () => {
     const state = reduce(closedTwoVisits(), payout([]), CTX);
 
-    expect(lastRejection(state)).toBe("Выберите визиты для вывода");
+    expect(lastRejection(state)).toBe("Pick visits to cash out");
   });
 
   it("чужое начисление не выводится", () => {
-    const guard = canRequestPayout(closedTwoVisits(), "sitter-2", [TODAY_MORNING]);
+    const guard = canRequestPayout(closedTwoVisits(), "sitter-2", [
+      TODAY_MORNING,
+    ]);
 
-    expect(guard).toEqual({ allowed: false, reason: "Начисление другого ситтера" });
+    expect(guard).toEqual({
+      allowed: false,
+      reason: "This earning belongs to another sitter",
+    });
   });
 
   it("повторное событие с тем же идентификатором вывода отклоняется", () => {
-    const state = run([payout([TODAY_MORNING]), payout([TODAY_EVENING])], closedTwoVisits());
+    const state = run(
+      [payout([TODAY_MORNING]), payout([TODAY_EVENING])],
+      closedTwoVisits(),
+    );
 
     expect(Object.keys(state.payouts)).toHaveLength(1);
-    expect(lastRejection(state)).toBe("Вывод с таким идентификатором уже существует");
+    expect(lastRejection(state)).toBe("A payout with this id already exists");
   });
 });
 
 describe("история выводов", () => {
   it("показывает дату, сумму и вошедшие визиты", () => {
-    const state = reduce(closedTwoVisits(), payout([TODAY_MORNING, TODAY_EVENING]), CTX);
+    const state = reduce(
+      closedTwoVisits(),
+      payout([TODAY_MORNING, TODAY_EVENING]),
+      CTX,
+    );
     const [record] = payoutsOfSitter(state, SEED_SITTER_ID);
 
     expect(record.paidAt).toBe(NOW);
     expect(record.grossMinor).toBe(2 * RATE);
     expect(record.netMinor).toBe(2 * netMinor(RATE));
-    expect(record.earnings.map((earning) => earning.visitId)).toEqual([
+    expect(record.items.map((earning) => earning.visitId)).toEqual([
       TODAY_MORNING,
       TODAY_EVENING,
     ]);

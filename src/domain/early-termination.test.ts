@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "./dates";
-import { balanceOfSitter, earningsOfBooking, plannedTotalMinor } from "./earnings";
+import {
+  balanceOfSitter,
+  earningsOfBooking,
+  plannedTotalMinor,
+} from "./earnings";
 import {
   BOOKING_ID,
   CTX,
@@ -17,6 +21,7 @@ import {
   lastRejection,
   readyToStart,
   run,
+  RATE,
 } from "./fixtures";
 import { canMarkVisitMissed, canTerminateEarly } from "./guards";
 import { handbackSummary } from "./handback";
@@ -26,7 +31,6 @@ import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
 import { visitId, visitsOfBooking } from "./visits";
 
-const RATE = 70_000;
 const TOMORROW_MORNING = visitId(BOOKING_ID, addDays(TODAY, 1), "morning");
 
 const missed = (id: string, reason?: string): DomainEvent => ({
@@ -34,7 +38,10 @@ const missed = (id: string, reason?: string): DomainEvent => ({
   visitId: id,
   reason,
 });
-const terminate = (by: "family" | "sitter" = "family", reason?: string): DomainEvent => ({
+const terminate = (
+  by: "family" | "sitter" = "family",
+  reason?: string,
+): DomainEvent => ({
   type: "BookingTerminatedEarly",
   bookingId: BOOKING_ID,
   by,
@@ -47,15 +54,22 @@ function working(): DomainState {
 }
 
 function statuses(state: DomainState): Record<string, number> {
-  return visitsOfBooking(state, BOOKING_ID).reduce<Record<string, number>>((acc, visit) => {
-    acc[visit.status] = (acc[visit.status] ?? 0) + 1;
-    return acc;
-  }, {});
+  return visitsOfBooking(state, BOOKING_ID).reduce<Record<string, number>>(
+    (acc, visit) => {
+      acc[visit.status] = (acc[visit.status] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
 }
 
 describe("пропущенный визит", () => {
   it("ситтер отмечает визит не состоявшимся с причиной", () => {
-    const state = reduce(working(), missed(TODAY_EVENING, "Семья вернулась раньше"), CTX);
+    const state = reduce(
+      working(),
+      missed(TODAY_EVENING, "Семья вернулась раньше"),
+      CTX,
+    );
     const visit = state.visits[TODAY_EVENING];
 
     expect(visit.status).toBe("missed");
@@ -74,12 +88,22 @@ describe("пропущенный визит", () => {
     const state = reduce(working(), missed(TODAY_MORNING), CTX);
 
     expect(state.visits[TODAY_MORNING].status).toBe("completed");
-    expect(lastRejection(state)).toBe("Отчёт по визиту сдан — визит состоялся");
+    expect(lastRejection(state)).toBe(
+      "The report is filed — this visit happened",
+    );
   });
 
   it("ошибочно отмеченный приход можно признать пропуском — иначе бронь не закрыть", () => {
-    const checkedIn = reduce(working(), { type: "VisitCheckedIn", visitId: TODAY_EVENING }, CTX);
-    const state = reduce(checkedIn, missed(TODAY_EVENING, "Не смог приехать"), CTX);
+    const checkedIn = reduce(
+      working(),
+      { type: "VisitCheckedIn", visitId: TODAY_EVENING },
+      CTX,
+    );
+    const state = reduce(
+      checkedIn,
+      missed(TODAY_EVENING, "Не смог приехать"),
+      CTX,
+    );
 
     expect(state.visits[TODAY_EVENING]).toMatchObject({
       status: "missed",
@@ -91,7 +115,9 @@ describe("пропущенный визит", () => {
     const state = reduce(handbackRequested(), missed(TODAY_EVENING), CTX);
 
     expect(state.visits[TODAY_EVENING].status).toBe("scheduled");
-    expect(lastRejection(state)).toBe("Работа уже сдана на подтверждение");
+    expect(lastRejection(state)).toBe(
+      "The work has already been submitted for confirmation",
+    );
   });
 
   it("в закрытой броне и в споре пропуск не отметить", () => {
@@ -109,7 +135,9 @@ describe("досрочное прерывание", () => {
     const state = reduce(readyToStart(), terminate(), CTX);
 
     expect(booking(state).status).toBe("readyToStart");
-    expect(lastRejection(state)).toBe("Опека ещё не началась — бронь можно просто отменить");
+    expect(lastRejection(state)).toBe(
+      "Care hasn't started yet — you can simply cancel the booking",
+    );
   });
 
   it("фиксирует, кто прервал и почему", () => {
@@ -140,14 +168,18 @@ describe("досрочное прерывание", () => {
   it("повторное прерывание отклоняется", () => {
     const state = reduce(reduce(working(), terminate(), CTX), terminate(), CTX);
 
-    expect(lastRejection(state)).toBe("Опека уже прервана");
+    expect(lastRejection(state)).toBe("Care has already been ended early");
   });
 });
 
 describe("прерванная бронь закрывается тем же путём", () => {
   /** Прерывание, возврат ключей, сдача работы, подтверждение семьи. */
   function terminatedAndClosed(): DomainState {
-    const terminated = reduce(working(), terminate("family", "Вернулись раньше"), CTX);
+    const terminated = reduce(
+      working(),
+      terminate("family", "Вернулись раньше"),
+      CTX,
+    );
     return run(
       [
         { type: "HandbackRequested", bookingId: BOOKING_ID },
@@ -193,7 +225,9 @@ describe("прерванная бронь закрывается тем же п�
       keysReturned(terminated),
     );
 
-    expect(balanceOfSitter(state, SEED_SITTER_ID).available.grossMinor).toBe(2 * RATE);
+    expect(balanceOfSitter(state, SEED_SITTER_ID).available.grossMinor).toBe(
+      2 * RATE,
+    );
   });
 });
 

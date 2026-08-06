@@ -13,117 +13,136 @@ import { Step, StepNote } from "./Step";
  * Это единственная точка, где деньги ситтера становятся доступными (ADR 0001),
  * поэтому семья видит сводку до нажатия, а не после.
  */
-export function HandbackPanel({ booking, role }: { booking: Booking; role: Role }) {
+export function HandbackPanel({
+  booking,
+  role,
+  expanded,
+}: {
+  booking: Booking;
+  role: Role;
+  expanded: boolean;
+}) {
   const { state, dispatch, now } = useStore();
   const [reason, setReason] = useState("");
   const summary = handbackSummary(state, booking.id);
-  const awaiting = booking.status === "awaitingHandback";
-  const closed = booking.status === "completed";
-  const disputed = booking.status === "disputed";
+  const requestGuard = canRequestHandback(state, booking.id);
   const timeLeftMs = handbackTimeLeftMs(booking, now);
 
-  return (
-    <Step
-      title="Сдача работы"
-      state={disputed ? "blocked" : closed ? "done" : awaiting ? "waiting" : "todo"}
-    >
-      <StepNote>
-        Визитов состоялось {summary.completed} из {summary.planned} по плану периода
-        {summary.missed > 0 && `, не состоялось ${summary.missed}`}
-        {summary.cancelled > 0 && `, снято прерыванием ${summary.cancelled}`}
-        {summary.unaccounted > 0 && `, без отметки ${summary.unaccounted}`}.{" "}
-        {role === "family" ? (
-          <>
-            К оплате — <strong>{formatMoney(summary.grossMinor)}</strong>: только за визиты со
-            сданным отчётом.
-          </>
-        ) : (
-          <>
-            К начислению — <strong>{formatMoney(summary.netMinor)}</strong> на руки (
-            {formatMoney(summary.grossMinor)} до комиссии, комиссия {formatMoney(summary.feeMinor)}).
-          </>
-        )}
-      </StepNote>
-
-      {disputed && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-red-900">
+  if (booking.status === "disputed") {
+    return (
+      <Step title="Handing back the work" state="blocked" last>
+        <div className="rounded-lg bg-red-50 px-3 py-2.5 text-body text-red-900">
           <p>
-            <strong>Семья оспорила закрытие</strong>
-            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: «
-            {booking.disputeReason}».
+            <strong>The family disputed the closing</strong>
+            {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: "
+            {booking.disputeReason}".
           </p>
           {/* Тупик показан честно: роли, которая разбирает спор, в прототипе нет. */}
           <p className="mt-1">
-            Деньги ситтера остаются заблокированными до разбора. Разбор — участие поддержки, которой
-            в прототипе нет, поэтому дальше бронь не двигается: это край модели, а не ошибка.
+            The sitter's money stays locked until this is reviewed. Review means a support role the
+            prototype doesn't have, so the booking goes no further: this is the edge of the model,
+            not a bug.
           </p>
         </div>
-      )}
+      </Step>
+    );
+  }
 
-      {closed && (
-        <StepNote>
-          Бронь закрыта{booking.completedAt && ` ${formatDateTime(booking.completedAt)}`}
-          {booking.closedBy === "timeout"
-            ? `: семья не ответила за ${HANDBACK_WINDOW_HOURS} ч, молчание считается согласием`
-            : " подтверждением семьи"}{" "}
-          — деньги ситтера разблокированы.
-        </StepNote>
-      )}
+  if (booking.status === "completed") {
+    return (
+      <Step
+        title="Handing back the work"
+        state="done"
+        last
+        record={`Closed${booking.completedAt ? ` ${formatDateTime(booking.completedAt)}` : ""}${
+          booking.closedBy === "timeout"
+            ? `: no reply within ${HANDBACK_WINDOW_HOURS}h, and silence counts as agreement`
+            : " by the family's confirmation"
+        } — the sitter's money is unlocked.`}
+      />
+    );
+  }
 
-      {!closed && !disputed && (
+  const awaiting = booking.status === "awaitingHandback";
+
+  return (
+    <Step
+      title="Handing back the work"
+      state={expanded ? "current" : "future"}
+      last
+      reason={expanded || requestGuard.allowed ? undefined : requestGuard.reason}
+    >
+      {expanded && (
         <>
+          <StepNote>
+            {summary.completed} of {summary.planned} planned visits happened
+            {summary.missed > 0 && `, ${summary.missed} missed`}
+            {summary.cancelled > 0 && `, ${summary.cancelled} dropped by the early end`}
+            {summary.unaccounted > 0 && `, ${summary.unaccounted} unaccounted for`}.{" "}
+            {role === "family" ? (
+              <>
+                Due — <strong>{formatMoney(summary.grossMinor)}</strong>: only for visits with a
+                filed report.
+              </>
+            ) : (
+              <>
+                You'll earn <strong>{formatMoney(summary.netMinor)}</strong> take-home (
+                {formatMoney(summary.grossMinor)} before fees, {formatMoney(summary.feeMinor)}{" "}
+                platform fee).
+              </>
+            )}
+          </StepNote>
+
           {awaiting && (
             <>
               <StepNote>
                 <strong>
                   {role === "family"
-                    ? "Ситтер заявил сдачу работы — ждём вашего подтверждения."
-                    : "Ждём подтверждения семьи."}
+                    ? "The sitter submitted the work — waiting on your confirmation."
+                    : "Waiting on the family to confirm."}
                 </strong>{" "}
-                Подтверждение закрывает бронь и разблокирует выплату ситтеру.
+                Confirming closes the booking and unlocks the sitter's payout.
               </StepNote>
               {/* Молчание семьи — тоже согласие: иначе бронь висит незакрытой,
                   а ситтер остаётся без денег (ADR 0001). */}
               <StepNote>
                 {role === "family"
-                  ? `Если не ответить, бронь закроется сама через ${formatDuration(timeLeftMs)} — молчание считается согласием.`
-                  : `Если семья не ответит, бронь закроется сама через ${formatDuration(timeLeftMs)}, и деньги разблокируются.`}
+                  ? `If you don't respond, the booking closes itself in ${formatDuration(timeLeftMs)} — silence counts as agreement.`
+                  : `If the family doesn't respond, the booking closes itself in ${formatDuration(timeLeftMs)} and the money unlocks.`}
               </StepNote>
             </>
           )}
 
           {role === "sitter" ? (
-            <div className="flex flex-wrap items-start gap-3">
+            <div>
               <GuardedButton
-                guard={canRequestHandback(state, booking.id)}
+                guard={requestGuard}
                 onClick={() => dispatch({ type: "HandbackRequested", bookingId: booking.id })}
               >
-                Сдать работу
+                Hand back the work
               </GuardedButton>
             </div>
           ) : (
-            <div className="flex flex-wrap items-start gap-3">
+            <div className="flex flex-col items-start gap-3">
               <GuardedButton
                 guard={canConfirmHandback(state, booking.id)}
                 onClick={() => dispatch({ type: "HandbackConfirmed", bookingId: booking.id })}
               >
-                Подтвердить закрытие
+                Confirm closing
               </GuardedButton>
               <input
                 type="text"
                 value={reason}
-                placeholder="Что пошло не так"
+                placeholder="What went wrong"
                 onChange={(event) => setReason(event.target.value)}
-                className={`${inputClass} min-w-56 flex-1`}
+                className={`${inputClass} w-full`}
               />
               <GuardedButton
                 tone="danger"
                 guard={canDisputeHandback(state, booking.id, reason)}
-                onClick={() =>
-                  dispatch({ type: "HandbackDisputed", bookingId: booking.id, reason })
-                }
+                onClick={() => dispatch({ type: "HandbackDisputed", bookingId: booking.id, reason })}
               >
-                Оспорить
+                Dispute
               </GuardedButton>
             </div>
           )}

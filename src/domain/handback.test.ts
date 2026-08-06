@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { addDays, today } from "./dates";
-import { balanceOfSitter, earningsOfBooking, plannedTotalMinor } from "./earnings";
+import {
+  balanceOfSitter,
+  earningsOfBooking,
+  plannedTotalMinor,
+} from "./earnings";
 import {
   BOOKING_ID,
   CTX,
@@ -15,6 +19,7 @@ import {
   lastRejection,
   readyToStart,
   workDone,
+  RATE,
 } from "./fixtures";
 import { canCancelBooking, canCheckIn, canRequestHandback } from "./guards";
 import { handbackSummary } from "./handback";
@@ -24,16 +29,21 @@ import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent } from "./types";
 import { visitId } from "./visits";
 
-const RATE = 70_000;
-const request: DomainEvent = { type: "HandbackRequested", bookingId: BOOKING_ID };
-const confirm: DomainEvent = { type: "HandbackConfirmed", bookingId: BOOKING_ID };
+const request: DomainEvent = {
+  type: "HandbackRequested",
+  bookingId: BOOKING_ID,
+};
+const confirm: DomainEvent = {
+  type: "HandbackConfirmed",
+  bookingId: BOOKING_ID,
+};
 
 describe("заявка на сдачу работы", () => {
   it("невозможна, пока опека не началась", () => {
     const state = reduce(readyToStart(), request, CTX);
 
     expect(booking(state).status).toBe("readyToStart");
-    expect(lastRejection(state)).toContain("Опека ещё не началась");
+    expect(lastRejection(state)).toContain("Care hasn't started");
   });
 
   it("невозможна, пока ключи не возвращены обеими сторонами", () => {
@@ -41,7 +51,9 @@ describe("заявка на сдачу работы", () => {
     const state = reduce(worked, request, CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Возврат ключей не подтверждён обеими сторонами");
+    expect(lastRejection(state)).toBe(
+      "The key return isn't confirmed by both sides",
+    );
   });
 
   it("одного подтверждения возврата ключей недостаточно", () => {
@@ -64,11 +76,15 @@ describe("заявка на сдачу работы", () => {
   });
 
   it("невозможна, пока есть визит с отмеченным приходом без отчёта", () => {
-    const started = reduce(readyToStart(), { type: "VisitCheckedIn", visitId: TODAY_MORNING }, CTX);
+    const started = reduce(
+      readyToStart(),
+      { type: "VisitCheckedIn", visitId: TODAY_MORNING },
+      CTX,
+    );
     const state = reduce(keysReturned(started), request, CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toContain("Закройте визит, где отмечен приход");
+    expect(lastRejection(state)).toContain("Close the visit you checked in to");
   });
 
   it("переводит бронь в ожидание подтверждения семьи", () => {
@@ -88,7 +104,9 @@ describe("заявка на сдачу работы", () => {
   it("повторная заявка отклоняется", () => {
     const state = reduce(handbackRequested(), request, CTX);
 
-    expect(lastRejection(state)).toBe("Заявка уже отправлена — ждём подтверждения семьи");
+    expect(lastRejection(state)).toBe(
+      "Already submitted — waiting on the family to confirm",
+    );
   });
 });
 
@@ -97,7 +115,9 @@ describe("подтверждение закрытия", () => {
     const state = reduce(workDone(), confirm, CTX);
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Ситтер ещё не заявил сдачу работы");
+    expect(lastRejection(state)).toBe(
+      "The sitter hasn't submitted the work yet",
+    );
   });
 
   it("закрывает бронь", () => {
@@ -120,13 +140,15 @@ describe("подтверждение закрытия", () => {
 
     expect(plannedTotalMinor(state, BOOKING_ID)).toBe(10 * RATE);
     expect(earningsOfBooking(state, BOOKING_ID)).toHaveLength(1);
-    expect(balanceOfSitter(state, SEED_SITTER_ID).available.grossMinor).toBe(RATE);
+    expect(balanceOfSitter(state, SEED_SITTER_ID).available.grossMinor).toBe(
+      RATE,
+    );
   });
 
   it("повторное подтверждение отклоняется", () => {
     const state = reduce(closed(), confirm, CTX);
 
-    expect(lastRejection(state)).toBe("Бронь уже закрыта");
+    expect(lastRejection(state)).toBe("This booking is already closed");
   });
 });
 
@@ -138,14 +160,18 @@ describe("набор начислений после заявки не меня�
 
     expect(guard).toEqual({
       allowed: false,
-      reason: "Работа сдана на подтверждение — ключи уже возвращены",
+      reason:
+        "The work is submitted for confirmation — the keys are already back",
     });
   });
 
   it("у закрытой брони приход тоже недоступен", () => {
     const later = visitId(BOOKING_ID, addDays(TODAY, 1), "morning");
 
-    expect(canCheckIn(closed(), later, NOW)).toEqual({ allowed: false, reason: "Опека закрыта" });
+    expect(canCheckIn(closed(), later, NOW)).toEqual({
+      allowed: false,
+      reason: "This booking is closed",
+    });
   });
 });
 
@@ -178,14 +204,14 @@ describe("отмена брони на закрытии", () => {
   it("бронь на подтверждении отменить нельзя — нужно досрочное прерывание", () => {
     expect(canCancelBooking(handbackRequested(), BOOKING_ID)).toEqual({
       allowed: false,
-      reason: "Опека уже началась — нужно досрочное прерывание",
+      reason: "Care has already started — end it early instead",
     });
   });
 
   it("закрытую бронь отменять нечего", () => {
     expect(canCancelBooking(closed(), BOOKING_ID)).toEqual({
       allowed: false,
-      reason: "Опека закрыта — отменять нечего",
+      reason: "This booking is closed — nothing to cancel",
     });
   });
 });

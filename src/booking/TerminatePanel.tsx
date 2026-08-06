@@ -17,30 +17,37 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
   const terminated = booking.status === "terminatedEarly";
   const guard = canTerminateEarly(state, booking.id);
 
-  if (!terminated && !guard.allowed) return null;
+  if (terminated) {
+    return (
+      <Step
+        title="Care ended early"
+        state="done"
+        record={`Ended${booking.terminatedAt ? ` ${formatDateTime(booking.terminatedAt)}` : ""}, called by ${
+          booking.terminatedBy === "family" ? "the family" : "the sitter"
+        }${booking.terminationReason ? `: "${booking.terminationReason}"` : ""}. Remaining visits dropped.`}
+      />
+    );
+  }
 
+  // Развилка, а не шаг пути, — но и её не прячем: недоступное действие видно с
+  // причиной, иначе прототип молчит ровно там, где должен объяснять. Элементы
+  // управления появляются только когда развилка открыта, чтобы раскрытым
+  // оставался ровно один шаг.
   return (
-    <Step title="Досрочное прерывание" state={terminated ? "done" : "todo"}>
-      {terminated ? (
-        <StepNote>
-          Опека прервана {booking.terminatedAt && formatDateTime(booking.terminatedAt)} по инициативе{" "}
-          {booking.terminatedBy === "family" ? "семьи" : "ситтера"}
-          {booking.terminationReason && `: «${booking.terminationReason}»`}. Оставшиеся визиты сняты,
-          закрыть бронь всё равно нужно — возврат ключей и сдача работы ниже.
-        </StepNote>
-      ) : (
+    <Step title="End care early" state="future" reason={guard.allowed ? undefined : guard.reason}>
+      {guard.allowed && (
         <>
           <StepNote>
-            Если опека прекращается раньше срока, оставшиеся визиты снимаются, а начислено будет
-            только за состоявшиеся.
+            If care stops before the end date, the remaining visits are dropped and only the ones
+            that happened are paid for. The booking still has to be closed afterwards.
           </StepNote>
-          <div className="flex flex-wrap items-start gap-3">
+          <div className="flex flex-col items-start gap-3">
             <input
               type="text"
               value={reason}
-              placeholder="Причина (необязательно)"
+              placeholder="Reason (optional)"
               onChange={(event) => setReason(event.target.value)}
-              className={`${inputClass} min-w-56 flex-1`}
+              className={`${inputClass} w-full`}
             />
             <GuardedButton
               tone="danger"
@@ -54,7 +61,7 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
                 })
               }
             >
-              Прервать опеку
+              End care early
             </GuardedButton>
           </div>
         </>

@@ -10,8 +10,10 @@ import {
   lastRejection,
   requested,
   run,
+  seedWithSitterRate,
 } from "./fixtures";
 import { canCancelBooking, canRespondToBooking } from "./guards";
+import { dollarsToMinor } from "./money";
 import { reduce } from "./reducer";
 import { createSeedState } from "./seed";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "./seed";
@@ -25,12 +27,14 @@ describe("запрос брони", () => {
       petId: SEED_PET_ID,
       startDate: TODAY,
       slots: ["morning", "evening"],
-      ratePerVisitMinor: 70_000,
+      ratePerVisitMinor: dollarsToMinor(20),
     });
   });
 
   it("берёт время из переданных часов, а не из системных", () => {
-    const state = reduce(createSeedState(), bookingRequested, { now: "2026-01-01T00:00:00.000Z" });
+    const state = reduce(createSeedState(), bookingRequested, {
+      now: "2026-01-01T00:00:00.000Z",
+    });
 
     expect(booking(state).requestedAt).toBe("2026-01-01T00:00:00.000Z");
   });
@@ -40,6 +44,27 @@ describe("запрос брони", () => {
 
     expect(Object.keys(state.bookings)).toHaveLength(1);
     expect(lastRejection(state)).toBeDefined();
+  });
+
+  /**
+   * ADR 0003: цену публикует Sitter, Family её не назначает. Событие запроса
+   * суммы не несёт — передать другую цену из интерфейса просто нечем.
+   */
+  it("берёт ставку из ситтера, а не из события", () => {
+    const state = reduce(seedWithSitterRate(3_500), bookingRequested, CTX);
+
+    expect(booking(state).ratePerVisitMinor).toBe(3_500);
+  });
+
+  it("отклоняет запрос неизвестному ситтеру, а не падает на нём", () => {
+    const state = reduce(
+      createSeedState(),
+      { ...bookingRequested, sitterId: "sitter-does-not-exist" },
+      CTX,
+    );
+
+    expect(Object.keys(state.bookings)).toHaveLength(0);
+    expect(lastRejection(state)).toBe("Sitter not found");
   });
 });
 
@@ -54,7 +79,11 @@ describe("ответ ситтера", () => {
   it("отклонение переводит бронь в отклонённую и сохраняет причину", () => {
     const state = reduce(
       requested(),
-      { type: "BookingDeclined", bookingId: BOOKING_ID, reason: "Занята на эти даты" },
+      {
+        type: "BookingDeclined",
+        bookingId: BOOKING_ID,
+        reason: "Занята на эти даты",
+      },
       CTX,
     );
 
@@ -67,7 +96,11 @@ describe("ответ ситтера", () => {
 
     expect(canRespondToBooking(accepted, BOOKING_ID).allowed).toBe(false);
 
-    const state = reduce(accepted, { type: "BookingDeclined", bookingId: BOOKING_ID }, CTX);
+    const state = reduce(
+      accepted,
+      { type: "BookingDeclined", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(state).status).toBe("confirmed");
     expect(lastRejection(state)).toBeDefined();
@@ -76,34 +109,60 @@ describe("ответ ситтера", () => {
 
 describe("отмена семьёй", () => {
   it("отменяет бронь, ожидающую ответа", () => {
-    const state = reduce(requested(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const state = reduce(
+      requested(),
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(state).status).toBe("cancelled");
     expect(booking(state).cancelledAt).toBe(NOW);
   });
 
   it("отменяет уже принятую бронь — она ещё не началась", () => {
-    const state = reduce(confirmed(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const state = reduce(
+      confirmed(),
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(state).status).toBe("cancelled");
   });
 
   it("не отменяет бронь, отклонённую ситтером", () => {
-    const declined = reduce(requested(), { type: "BookingDeclined", bookingId: BOOKING_ID }, CTX);
+    const declined = reduce(
+      requested(),
+      { type: "BookingDeclined", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(canCancelBooking(declined, BOOKING_ID).allowed).toBe(false);
 
-    const state = reduce(declined, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const state = reduce(
+      declined,
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(state).status).toBe("declined");
-    expect(lastRejection(state)).toBe("Ситтер отклонил бронь — отменять нечего");
+    expect(lastRejection(state)).toBe(
+      "The sitter declined — nothing to cancel",
+    );
   });
 
   it("не отменяет бронь дважды", () => {
-    const cancelled = reduce(requested(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
-    const state = reduce(cancelled, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const cancelled = reduce(
+      requested(),
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
+    const state = reduce(
+      cancelled,
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
-    expect(lastRejection(state)).toBe("Бронь уже отменена");
+    expect(lastRejection(state)).toBe("This booking is already canceled");
   });
 });
 
@@ -115,7 +174,12 @@ describe("журнал", () => {
       { type: "BookingCancelled", bookingId: BOOKING_ID },
     ]);
 
-    expect(state.journal.map((entry) => [entry.event.type, Boolean(entry.rejection)])).toEqual([
+    expect(
+      state.journal.map((entry) => [
+        entry.event.type,
+        Boolean(entry.rejection),
+      ]),
+    ).toEqual([
       ["BookingRequested", false],
       ["BookingDeclined", false],
       ["BookingCancelled", true],
@@ -123,8 +187,16 @@ describe("журнал", () => {
   });
 
   it("отклонённый переход не меняет состояние, кроме журнала", () => {
-    const before = reduce(requested(), { type: "BookingDeclined", bookingId: BOOKING_ID }, CTX);
-    const after = reduce(before, { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const before = reduce(
+      requested(),
+      { type: "BookingDeclined", bookingId: BOOKING_ID },
+      CTX,
+    );
+    const after = reduce(
+      before,
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(after.bookings).toEqual(before.bookings);
     expect(after.visits).toEqual(before.visits);

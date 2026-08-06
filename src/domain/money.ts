@@ -14,17 +14,19 @@ export function netMinor(grossMinor: number): number {
 
 export const feeRateLabel = `${Math.round(PLATFORM_FEE_RATE * 100)}%`;
 
-/** Деньги хранятся в копейках — чтобы расчёты не расходились на дробях. */
-const formatter = new Intl.NumberFormat("ru-RU", {
+/** Рынок задан здесь и только здесь: валюта и локаль форматирования. */
+export const LOCALE = "en-US";
+
+/** Деньги хранятся в центах — чтобы расчёты не расходились на дробях. */
+const formatter = new Intl.NumberFormat(LOCALE, {
   style: "currency",
-  currency: "RUB",
-  maximumFractionDigits: 0,
+  currency: "USD",
 });
 
 export function formatMoney(minor: number): string {
   return formatter.format(minor / 100);
 }
 
-export function rublesToMinor(rubles: number): number {
-  return Math.round(rubles * 100);
+export function dollarsToMinor(dollars: number): number {
+  return Math.round(dollars * 100);
 }

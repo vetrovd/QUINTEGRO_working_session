@@ -14,12 +14,20 @@ import { canAcceptMeetGreet, canProposeMeetGreet } from "./guards";
 import { reduce } from "./reducer";
 
 const propose = (by: "family" | "sitter", meetingAt = NOW) =>
-  ({ type: "MeetGreetProposed", bookingId: BOOKING_ID, by, meetingAt }) as const;
+  ({
+    type: "MeetGreetProposed",
+    bookingId: BOOKING_ID,
+    by,
+    meetingAt,
+  }) as const;
 
 describe("знакомство", () => {
   it("семья предлагает время, ситтер принимает", () => {
     const state = run(
-      [propose("family"), { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "sitter" }],
+      [
+        propose("family"),
+        { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "sitter" },
+      ],
       confirmed(),
     );
 
@@ -32,7 +40,10 @@ describe("знакомство", () => {
 
   it("встречное предложение перебивает исходное и меняет, чей ход", () => {
     const counter = "2026-08-08T18:00:00.000Z";
-    const state = run([propose("family"), propose("sitter", counter)], confirmed());
+    const state = run(
+      [propose("family"), propose("sitter", counter)],
+      confirmed(),
+    );
 
     expect(booking(state).meetGreet).toMatchObject({
       status: "proposed",
@@ -45,28 +56,48 @@ describe("знакомство", () => {
 
   it("своё же предложение принять нельзя", () => {
     const proposed = reduce(confirmed(), propose("family"), CTX);
-    const state = reduce(proposed, { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "family" }, CTX);
+    const state = reduce(
+      proposed,
+      { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "family" },
+      CTX,
+    );
 
     expect(booking(state).meetGreet.status).toBe("proposed");
-    expect(lastRejection(state)).toBe("Своё же предложение принять нельзя");
+    expect(lastRejection(state)).toBe("You can't accept your own proposal");
   });
 
   it("нельзя дважды подряд предложить время со своей стороны", () => {
     const proposed = reduce(confirmed(), propose("family"), CTX);
 
-    expect(canProposeMeetGreet(proposed, BOOKING_ID, "family").allowed).toBe(false);
-    expect(canProposeMeetGreet(proposed, BOOKING_ID, "sitter").allowed).toBe(true);
+    expect(canProposeMeetGreet(proposed, BOOKING_ID, "family").allowed).toBe(
+      false,
+    );
+    expect(canProposeMeetGreet(proposed, BOOKING_ID, "sitter").allowed).toBe(
+      true,
+    );
   });
 
   it("состоявшимся отмечается только согласованное знакомство", () => {
     const proposed = reduce(confirmed(), propose("family"), CTX);
-    const tooEarly = reduce(proposed, { type: "MeetGreetHappened", bookingId: BOOKING_ID }, CTX);
+    const tooEarly = reduce(
+      proposed,
+      { type: "MeetGreetHappened", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(tooEarly).meetGreet.status).toBe("proposed");
-    expect(lastRejection(tooEarly)).toBe("Сначала согласуйте время знакомства");
+    expect(lastRejection(tooEarly)).toBe("Agree on a time first");
 
-    const accepted = reduce(proposed, { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "sitter" }, CTX);
-    const happened = reduce(accepted, { type: "MeetGreetHappened", bookingId: BOOKING_ID }, CTX);
+    const accepted = reduce(
+      proposed,
+      { type: "MeetGreetAccepted", bookingId: BOOKING_ID, by: "sitter" },
+      CTX,
+    );
+    const happened = reduce(
+      accepted,
+      { type: "MeetGreetHappened", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     expect(booking(happened).meetGreet.status).toBe("happened");
   });
@@ -75,7 +106,7 @@ describe("знакомство", () => {
     const state = reduce(requested(), propose("family"), CTX);
 
     expect(booking(state).meetGreet.status).toBe("none");
-    expect(lastRejection(state)).toBe("Ситтер ещё не принял бронь");
+    expect(lastRejection(state)).toBe("The sitter hasn't accepted yet");
   });
 });
 
@@ -90,14 +121,24 @@ describe("повторная бронь", () => {
       confirmed(),
     );
 
-    const state = reduce(met, { ...bookingRequested, bookingId: "booking-2" }, CTX);
+    const state = reduce(
+      met,
+      { ...bookingRequested, bookingId: "booking-2" },
+      CTX,
+    );
 
     expect(state.bookings["booking-2"].meetGreet.status).toBe("skipped");
-    expect(canProposeMeetGreet(state, "booking-2", "family").allowed).toBe(false);
+    expect(canProposeMeetGreet(state, "booking-2", "family").allowed).toBe(
+      false,
+    );
   });
 
   it("не пропускает знакомство, если предыдущее так и не состоялось", () => {
-    const state = reduce(confirmed(), { ...bookingRequested, bookingId: "booking-2" }, CTX);
+    const state = reduce(
+      confirmed(),
+      { ...bookingRequested, bookingId: "booking-2" },
+      CTX,
+    );
 
     expect(state.bookings["booking-2"].meetGreet.status).toBe("none");
   });

@@ -44,7 +44,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
     setPhotoError(null);
     const room = MAX_PHOTOS - photos.length;
     if (room <= 0) {
-      setPhotoError(`Не больше ${MAX_PHOTOS} фото на отчёт`);
+      setPhotoError(`No more than ${MAX_PHOTOS} photos per report`);
       return;
     }
     try {
@@ -53,7 +53,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
       );
       setPhotos((current) => [...current, ...added]);
     } catch {
-      setPhotoError("Не удалось прочитать файл");
+      setPhotoError("Couldn't read that file");
     }
   }
 
@@ -62,21 +62,21 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-stone-200 p-3">
+    <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-sm font-semibold text-stone-900">Отчёт о визите</h4>
+        <h4 className="text-body font-semibold text-stone-900">Visit report</h4>
         {draft && (
-          <span className="text-xs text-stone-500">
-            черновик сохранён {formatDateTime(draft.updatedAt)}
+          <span className="text-meta text-stone-500">
+            draft saved {formatDateTime(draft.updatedAt)}
           </span>
         )}
       </div>
 
       <fieldset className="mt-3">
-        <legend className="text-sm font-medium text-stone-700">Выполнено</legend>
+        <legend className="text-body font-medium text-stone-700">Done</legend>
         <div className="mt-2 flex flex-wrap gap-3">
           {pet.careTasks.map((task) => (
-            <label key={task} className="flex items-center gap-2 text-sm">
+            <label key={task} className="flex items-center gap-2 text-body">
               <input
                 type="checkbox"
                 checked={tasks.includes(task)}
@@ -89,33 +89,33 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
         </div>
       </fieldset>
 
-      <label className="mt-3 flex flex-col gap-1 text-sm">
-        <span className="font-medium text-stone-700">Заметка</span>
+      <label className="mt-4 flex flex-col gap-1.5 text-body">
+        <span className="font-medium text-stone-700">Note</span>
         <textarea
           value={note}
           rows={2}
-          placeholder="Что стоит знать семье"
+          placeholder="Anything the family should know"
           onChange={(event) => setNote(event.target.value)}
           className={inputClass}
         />
       </label>
 
       <div className="mt-3">
-        <p className="text-sm font-medium text-stone-700">Фото</p>
+        <p className="text-body font-medium text-stone-700">Photos</p>
         {photos.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {photos.map((photo, index) => (
               <div key={photo.slice(-24)} className="relative">
                 <img
                   src={photo}
-                  alt={`Фото ${index + 1}`}
-                  className="size-20 rounded-md object-cover"
+                  alt={`Photo ${index + 1}`}
+                  className="size-20 rounded-lg object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => setPhotos(photos.filter((_, item) => item !== index))}
-                  className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-stone-900 text-xs text-white"
-                  title="Убрать фото"
+                  className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-stone-900 text-meta text-white"
+                  title="Remove photo"
                 >
                   ×
                 </button>
@@ -128,22 +128,22 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
           accept="image/*"
           multiple
           onChange={(event) => void addPhotos(event.target.files)}
-          className="mt-2 block text-sm text-stone-600"
+          className="mt-2 block text-meta text-stone-600"
         />
-        {photoError && <p className="mt-1 text-xs text-red-700">{photoError}</p>}
+        {photoError && <p className="mt-1 text-meta text-red-700">{photoError}</p>}
       </div>
 
       <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-stone-200 pt-3">
         <GuardedButton tone="neutral" guard={saveGuard} onClick={save}>
-          Сохранить черновик
+          Save draft
         </GuardedButton>
         <GuardedButton
-          guard={dirty ? { allowed: false, reason: "Сначала сохраните черновик" } : submitGuard}
+          guard={dirty ? { allowed: false, reason: "Save the draft first" } : submitGuard}
           onClick={() => dispatch({ type: "VisitReportSubmitted", visitId: visit.id })}
         >
-          Отправить отчёт
+          Send report
         </GuardedButton>
-        <p className="text-xs text-stone-500">Отправленный отчёт изменить нельзя.</p>
+        <p className="text-meta text-stone-500">A sent report can't be changed.</p>
       </div>
     </div>
   );

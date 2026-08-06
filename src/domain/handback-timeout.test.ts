@@ -10,6 +10,7 @@ import {
   handbackRequested,
   lastRejection,
   workDone,
+  RATE,
 } from "./fixtures";
 import { canAutoConfirmHandback } from "./guards";
 import {
@@ -24,12 +25,16 @@ import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
 
-const RATE = 70_000;
-const autoConfirm: DomainEvent = { type: "HandbackAutoConfirmed", bookingId: BOOKING_ID };
+const autoConfirm: DomainEvent = {
+  type: "HandbackAutoConfirmed",
+  bookingId: BOOKING_ID,
+};
 
 /** Контекст со временем, сдвинутым от заявки на указанное число часов. */
 function after(hours: number, extraMs = 0): ReduceContext {
-  return { now: new Date(Date.parse(NOW) + hours * HOUR_MS + extraMs).toISOString() };
+  return {
+    now: new Date(Date.parse(NOW) + hours * HOUR_MS + extraMs).toISOString(),
+  };
 }
 
 function timeLeft(state: DomainState, ctx: ReduceContext): number {
@@ -40,7 +45,9 @@ describe("окно ответа семьи", () => {
   it("считается от заявки на сдачу работы", () => {
     const state = handbackRequested();
 
-    expect(handbackDeadline(booking(state))).toBe(after(HANDBACK_WINDOW_HOURS).now);
+    expect(handbackDeadline(booking(state))).toBe(
+      after(HANDBACK_WINDOW_HOURS).now,
+    );
   });
 
   it("есть только у брони, ожидающей подтверждения", () => {
@@ -63,7 +70,9 @@ describe("авто-подтверждение по таймауту", () => {
     const state = reduce(handbackRequested(), autoConfirm, ctx);
 
     expect(booking(state).status).toBe("awaitingHandback");
-    expect(lastRejection(state)).toBe("Окно ответа семьи ещё не истекло");
+    expect(lastRejection(state)).toBe(
+      "The family's response window hasn't run out yet",
+    );
     expect(expiredHandbacks(handbackRequested(), ctx.now)).toEqual([]);
   });
 
@@ -77,7 +86,11 @@ describe("авто-подтверждение по таймауту", () => {
   });
 
   it("деньги разблокируются так же, как при подтверждении семьи", () => {
-    const state = reduce(handbackRequested(), autoConfirm, after(HANDBACK_WINDOW_HOURS));
+    const state = reduce(
+      handbackRequested(),
+      autoConfirm,
+      after(HANDBACK_WINDOW_HOURS),
+    );
     const balance = balanceOfSitter(state, SEED_SITTER_ID);
 
     expect(balance.locked.count).toBe(0);
@@ -87,7 +100,9 @@ describe("авто-подтверждение по таймауту", () => {
   it("просроченная бронь попадает в список к закрытию", () => {
     const state = handbackRequested();
 
-    expect(expiredHandbacks(state, after(HANDBACK_WINDOW_HOURS).now)).toEqual([BOOKING_ID]);
+    expect(expiredHandbacks(state, after(HANDBACK_WINDOW_HOURS).now)).toEqual([
+      BOOKING_ID,
+    ]);
   });
 });
 
@@ -103,14 +118,18 @@ describe("ручное подтверждение имеет приоритет"
     const state = reduce(closed(), autoConfirm, after(100));
 
     expect(booking(state).closedBy).toBe("family");
-    expect(lastRejection(state)).toBe("Бронь уже закрыта");
+    expect(lastRejection(state)).toBe("This booking is already closed");
   });
 
   it("бронь без заявки на сдачу таймаут не закрывает", () => {
     const state = reduce(workDone(), autoConfirm, after(100));
 
     expect(booking(state).status).toBe("inProgress");
-    expect(lastRejection(state)).toBe("Ситтер ещё не заявил сдачу работы");
-    expect(canAutoConfirmHandback(workDone(), BOOKING_ID, after(100).now).allowed).toBe(false);
+    expect(lastRejection(state)).toBe(
+      "The sitter hasn't submitted the work yet",
+    );
+    expect(
+      canAutoConfirmHandback(workDone(), BOOKING_ID, after(100).now).allowed,
+    ).toBe(false);
   });
 });

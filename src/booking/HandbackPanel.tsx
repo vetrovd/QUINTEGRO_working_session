@@ -30,7 +30,7 @@ export function HandbackPanel({
 
   if (booking.status === "disputed") {
     return (
-      <Step title="Handing back the work" state="blocked" last>
+      <Step title="Handing back the work" state="deadEnd" last>
         <div className="rounded-lg bg-red-50 px-3 py-2.5 text-body text-red-900">
           <p>
             <strong>The family disputed the closing</strong>

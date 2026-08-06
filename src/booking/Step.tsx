@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
+import type { StepPhase } from "../domain/timeline";
 
-export type StepState = "done" | "current" | "future" | "blocked";
+/**
+ * Вид строки — это фаза шага из домена плюс одна чисто интерфейсная: развилка.
+ * Развилка не лежит на пути (её можно не проходить), но когда она открыта,
+ * рисовать её цветом «предстоит» — врать: действие доступно прямо сейчас.
+ */
+export type StepState = StepPhase | "fork";
 
 /**
  * Шаг таймлайна. Пройденный сворачивается в строку-запись, текущий раскрыт с
@@ -34,7 +40,10 @@ export function Step({
     done: { tone: "bg-emerald-100 text-emerald-900", glyph: "✓" },
     current: { tone: "bg-amber-100 text-amber-900 ring-2 ring-amber-300", glyph: "•" },
     future: { tone: "bg-stone-100 text-stone-400", glyph: "•" },
-    blocked: { tone: "bg-red-100 text-red-900", glyph: "!" },
+    deadEnd: { tone: "bg-red-100 text-red-900", glyph: "!" },
+    // Развилка нейтральна: она не спорит ни с одним из четырёх состояний пути,
+    // но и не выглядит выключенной.
+    fork: { tone: "bg-stone-200 text-stone-700", glyph: "⌥" },
   }[state];
 
   return (

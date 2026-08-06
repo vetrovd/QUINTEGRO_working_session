@@ -2,7 +2,7 @@ import { canStartCare } from "../domain/guards";
 import { timelineOf } from "../domain/timeline";
 import type { StepPhase } from "../domain/timeline";
 import { visitsOfBooking } from "../domain/visits";
-import type { Booking, DomainState, Role } from "../domain/types";
+import type { Booking, DomainState, Role, VisitStatus } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { formatDateTime, plural } from "../app/format";
 import { routeToHash } from "../app/routes";
@@ -31,7 +31,7 @@ export function BookingTimeline({ booking, role }: { booking: Booking; role: Rol
 
   return (
     <ol className="flex flex-col">
-      <RequestStep booking={booking} />
+      <RequestStep booking={booking} phase={steps.request} />
 
       <MeetGreetPanel booking={booking} role={role} expanded={steps.meetGreet === "current"} />
       <KeyHandoverPanel
@@ -53,12 +53,16 @@ export function BookingTimeline({ booking, role }: { booking: Booking; role: Rol
   );
 }
 
-function RequestStep({ booking }: { booking: Booking }) {
+/**
+ * Заявка — такой же шаг пути, как остальные, поэтому её фазу считает домен.
+ * Здесь остаётся только текст: что именно произошло с этой заявкой.
+ */
+function RequestStep({ booking, phase }: { booking: Booking; phase: StepPhase }) {
   if (booking.status === "declined") {
     return (
       <Step
-        title="Request"
-        state="blocked"
+        title="Request declined"
+        state={phase}
         record={`Declined by the sitter${booking.declineReason ? `: "${booking.declineReason}"` : ""}.`}
       />
     );
@@ -66,21 +70,19 @@ function RequestStep({ booking }: { booking: Booking }) {
   if (booking.status === "cancelled") {
     return (
       <Step
-        title="Request"
-        state="blocked"
+        title="Request canceled"
+        state={phase}
         record={`Canceled${booking.cancelledAt ? ` ${formatDateTime(booking.cancelledAt)}` : ""}.`}
       />
     );
   }
   if (booking.status === "requested") {
-    return (
-      <Step title="Request sent" state="current" record="Waiting on the sitter to accept." />
-    );
+    return <Step title="Request sent" state={phase} record="Waiting on the sitter to accept." />;
   }
   return (
     <Step
       title="Request accepted"
-      state="done"
+      state={phase}
       record={booking.respondedAt ? formatDateTime(booking.respondedAt) : undefined}
     />
   );
@@ -105,7 +107,7 @@ function CareStep({
   return (
     <Step
       title="Visits"
-      state={phase === "deadEnd" ? "blocked" : phase}
+      state={phase}
       reason={guard.allowed ? undefined : guard.reason}
     >
       {role === "sitter" && <VisitTally booking={booking} state={state} />}
@@ -123,7 +125,7 @@ function VisitTally({ booking, state }: { booking: Booking; state: DomainState }
   const visits = visitsOfBooking(state, booking.id).filter((visit) => visit.status !== "cancelled");
   if (visits.length === 0) return null;
 
-  const count = (...statuses: string[]) =>
+  const count = (...statuses: VisitStatus[]) =>
     visits.filter((visit) => statuses.includes(visit.status)).length;
   const tally = [
     [count("completed"), "reported"],

@@ -16,7 +16,7 @@ import {
 } from "./fixtures";
 import { canRequestPayout } from "./guards";
 import { netMinor } from "./money";
-import { payoutsOfSitter } from "./payouts";
+import { payoutsOfSitter, selectionBucket } from "./payouts";
 import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import type { DomainEvent, DomainState } from "./types";
@@ -164,5 +164,29 @@ describe("история выводов", () => {
     expect(state.visits).toEqual(before.visits);
     expect(state.reports).toEqual(before.reports);
     expect(state.bookings[BOOKING_ID]).toEqual(before.bookings[BOOKING_ID]);
+  });
+});
+
+/**
+ * Предпросмотр вывода: ситтер видит три величины до нажатия, а не после.
+ * Считаются они по выбранным визитам, поэтому частичный выбор — главный случай.
+ */
+describe("суммы выбранного к выводу", () => {
+  it("считает выбранный визит, а не весь доступный баланс", () => {
+    const state = closedTwoVisits();
+    const one = selectionBucket(state, [TODAY_MORNING]);
+
+    expect(one.count).toBe(1);
+    expect(one.grossMinor).toBe(RATE);
+    expect(one.feeMinor + one.netMinor).toBe(one.grossMinor);
+  });
+
+  it("на пустом выборе все три величины нулевые", () => {
+    expect(selectionBucket(closedTwoVisits(), [])).toMatchObject({
+      count: 0,
+      grossMinor: 0,
+      feeMinor: 0,
+      netMinor: 0,
+    });
   });
 });

@@ -1,10 +1,10 @@
-import { balanceOfSitter, earningsByBooking, lockReasonOf } from "../domain/earnings";
+import { balanceOfSitter, earningsByBooking, isEmptyBalance, lockReasonOf } from "../domain/earnings";
 import type { Bucket, EarningStatus } from "../domain/earnings";
 import { feeRateLabel, formatMoney } from "../domain/money";
 import { SEED_SITTER_ID } from "../domain/seed";
 import type { DomainState } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
-import { earningStatusText, formatDateRange, plural } from "../app/format";
+import { earningStatusText, feesText, formatDateRange, plural } from "../app/format";
 import { Card, EmptyState, SectionTitle } from "../app/ui";
 
 const PARTS: { status: EarningStatus; dot: string }[] = [
@@ -21,9 +21,7 @@ const PARTS: { status: EarningStatus; dot: string }[] = [
 export function BalancePanel() {
   const { state } = useStore();
   const balance = balanceOfSitter(state, SEED_SITTER_ID);
-  const hasEarnings = PARTS.some((part) => balance[part.status].count > 0);
-
-  if (!hasEarnings) {
+  if (isEmptyBalance(balance)) {
     return (
       <section>
         <SectionTitle hint={`Platform fee — ${feeRateLabel} of each visit`}>Balance</SectionTitle>
@@ -66,8 +64,7 @@ export function BalancePanel() {
 function Amounts({ bucket }: { bucket: Bucket }) {
   return (
     <>
-      {plural(bucket.count, "visit")} · {formatMoney(bucket.grossMinor)} before fees,{" "}
-      {formatMoney(bucket.feeMinor)} fee
+      {plural(bucket.count, "visit")} · {feesText(bucket.grossMinor, bucket.feeMinor)}
     </>
   );
 }

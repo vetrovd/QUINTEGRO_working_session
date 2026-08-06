@@ -20,6 +20,8 @@ describe("таймлайн брони", () => {
   it("до принятия заявки ни один шаг не идёт", () => {
     const steps = timelineOf(requested(), BOOKING_ID);
     expect(steps).toEqual({
+      // Сама заявка — шаг пути, и ход по ней за ситтером.
+      request: "current",
       meetGreet: "future",
       keyHandover: "future",
       care: "future",
@@ -81,7 +83,7 @@ describe("таймлайн брони", () => {
 
   it("бронь закрыта — пройдены все шаги", () => {
     const steps = timelineOf(closed(), BOOKING_ID);
-    expect(Object.values(steps)).toEqual(["done", "done", "done", "done", "done"]);
+    expect(Object.values(steps)).toEqual(["done", "done", "done", "done", "done", "done"]);
   });
 
   it("спор — это тупик, а не пройденный шаг", () => {

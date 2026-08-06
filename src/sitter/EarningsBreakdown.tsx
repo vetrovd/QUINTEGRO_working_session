@@ -31,7 +31,7 @@ const PARTS: EarningStatus[] = ["locked", "available", "paidOut"];
  */
 export function EarningsBreakdown({ focusBookingId }: { focusBookingId?: BookingId }) {
   const { state } = useStore();
-  const rows = earningsByBooking(state, SEED_SITTER_ID);
+  const byBooking = earningsByBooking(state, SEED_SITTER_ID);
   // Бронь, из которой пришли по ссылке, раскрыта сразу: переход «из работы в
   // деньги» должен заканчиваться на нужной строке, а не рядом с ней.
   const [expanded, setExpanded] = useState<Set<BookingId>>(
@@ -50,20 +50,20 @@ export function EarningsBreakdown({ focusBookingId }: { focusBookingId?: Booking
     <section>
       <SectionTitle hint="Where the balance came from">Booking by booking</SectionTitle>
 
-      {rows.length === 0 ? (
+      {byBooking.length === 0 ? (
         <EmptyState>
           Nothing to break down yet. A booking shows up here once a visit has a filed report.
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-3">
-          {rows.map((row) => (
+          {byBooking.map((earnings) => (
             <BookingRow
-              key={row.bookingId}
-              row={row}
+              key={earnings.bookingId}
+              earnings={earnings}
               state={state}
-              focused={row.bookingId === focusBookingId}
-              expanded={expanded.has(row.bookingId)}
-              onToggle={() => toggle(row.bookingId)}
+              focused={earnings.bookingId === focusBookingId}
+              expanded={expanded.has(earnings.bookingId)}
+              onToggle={() => toggle(earnings.bookingId)}
             />
           ))}
         </div>
@@ -73,22 +73,23 @@ export function EarningsBreakdown({ focusBookingId }: { focusBookingId?: Booking
 }
 
 function BookingRow({
-  row,
+  earnings,
   state,
   focused,
   expanded,
   onToggle,
 }: {
-  row: BookingEarnings;
+  earnings: BookingEarnings;
   state: DomainState;
   focused: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const booking = state.bookings[row.bookingId];
+  const booking = state.bookings[earnings.bookingId];
   const pet = state.pets[booking.petId];
   const family = state.families[booking.familyId];
-  const lockReason = row.parts.locked.count > 0 ? lockReasonOf(state, row.bookingId) : undefined;
+  const lockReason =
+    earnings.parts.locked.count > 0 ? lockReasonOf(state, earnings.bookingId) : undefined;
   const card = useRef<HTMLDivElement>(null);
 
   // Рамка сбрасывает прокрутку на новом экране, и делает это после эффектов
@@ -120,18 +121,18 @@ function BookingRow({
             {formatDateRange(booking.startDate, booking.endDate)}
           </p>
           <p className="text-title tabular-nums text-stone-900">
-            {formatMoney(row.total.netMinor)}
+            {formatMoney(earnings.total.netMinor)}
           </p>
         </div>
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-meta text-stone-500">
             {pet.name} · {family.name}
           </p>
-          <p className="text-meta text-stone-500">{plural(row.total.count, "visit")}</p>
+          <p className="text-meta text-stone-500">{plural(earnings.total.count, "visit")}</p>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <PartChips parts={row.parts} />
+          <PartChips parts={earnings.parts} />
           <span className="ml-auto text-meta text-stone-500">
             {expanded ? "Hide visits ▲" : "Show visits ▼"}
           </span>
@@ -146,7 +147,7 @@ function BookingRow({
 
       {expanded && (
         <ul className="mx-4 mb-3 flex flex-col divide-y divide-stone-100 border-t border-stone-100">
-          {row.items.map((earning) => (
+          {earnings.items.map((earning) => (
             <VisitLine key={earning.visitId} earning={earning} />
           ))}
         </ul>
@@ -154,7 +155,7 @@ function BookingRow({
 
       {/* Из денег — обратно в работу: ссылка на бронь, чьи это начисления. */}
       <a
-        href={routeToHash({ role: "sitter", screen: "booking", bookingId: row.bookingId })}
+        href={routeToHash({ role: "sitter", screen: "booking", bookingId: earnings.bookingId })}
         className="block border-t border-stone-100 px-4 py-3 text-meta text-stone-500 transition hover:bg-stone-50 hover:text-stone-900"
       >
         Open booking <span aria-hidden="true" className="ml-0.5">→</span>

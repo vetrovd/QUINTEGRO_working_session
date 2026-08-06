@@ -1,4 +1,4 @@
-import type { BookingId, Role } from "../domain/types";
+import type { BookingId, Role, VisitId } from "../domain/types";
 
 /**
  * Маршрут — это роль плюс экран: переключение роли тоже переход, поэтому она
@@ -11,7 +11,9 @@ export type Route =
   | { role: "family"; screen: "booking"; bookingId: BookingId }
   | { role: "sitter"; screen: "bookings" }
   | { role: "sitter"; screen: "booking"; bookingId: BookingId }
-  | { role: "sitter"; screen: "schedule" }
+  // Визит в адресе расписания — переход «из брони в работу»: экран
+  // открывается на его карточке и переживает перезагрузку вместе с ней.
+  | { role: "sitter"; screen: "schedule"; visitId?: VisitId }
   // Бронь в адресе Earnings — это переход «из работы в деньги»: раздел
   // открывается на её строке и переживает перезагрузку вместе с ней.
   | { role: "sitter"; screen: "earnings"; bookingId?: BookingId };
@@ -34,8 +36,10 @@ export function routeToHash(route: Route): string {
       return `#/${route.role}/bookings/${route.bookingId}`;
     case "earnings":
       return route.bookingId ? `#/sitter/earnings/${route.bookingId}` : "#/sitter/earnings";
-    default:
-      return `#/${route.role}/${route.screen}`;
+    case "schedule":
+      return route.visitId
+        ? `#/sitter/schedule/${encodeURIComponent(route.visitId)}`
+        : "#/sitter/schedule";
   }
 }
 
@@ -54,7 +58,9 @@ function familyRoute([screen, id]: string[]): Route {
 }
 
 function sitterRoute([screen, id]: string[]): Route {
-  if (screen === "schedule") return { role: "sitter", screen: "schedule" };
+  if (screen === "schedule") {
+    return { role: "sitter", screen: "schedule", visitId: id ? decodeURIComponent(id) : undefined };
+  }
   if (screen === "earnings") return { role: "sitter", screen: "earnings", bookingId: id };
   if (screen === "bookings" && id) return { role: "sitter", screen: "booking", bookingId: id };
   return SITTER_HOME;

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addDays, today } from "../domain/dates";
 import { canCheckIn, canMarkVisitMissed } from "../domain/guards";
 import { SEED_SITTER_ID } from "../domain/seed";
-import type { DomainState, Visit } from "../domain/types";
-import { compareVisits } from "../domain/visits";
+import type { DomainState, Visit, VisitId } from "../domain/types";
+import { compareVisits, isAwaitingReport, isOverdue } from "../domain/visits";
 import { useStore } from "../store/StoreProvider";
 import {
   careTaskLabel,
@@ -13,16 +13,19 @@ import {
   plural,
   slotLabel,
 } from "../app/format";
+import { scrollIntoScreen } from "../app/PhoneFrame";
 import { routeToHash } from "../app/routes";
 import { Card, EmptyState, Eyebrow, GuardedButton, inputClass } from "../app/ui";
 import { ReportComposer } from "./ReportComposer";
 
 /**
- * Расписание ситтера. «Ждут отчёта» идёт первой группой — это прямой ответ
- * на вопрос «где я ещё не закрыл работу». Отметка прихода заблокирована,
- * пока передача ключей не подтверждена обеими сторонами.
+ * Расписание ситтера. Первыми идут просроченные, за ними ждущие отчёта: это
+ * прямой ответ на вопрос «где я не закрыл работу». Обе группы считаются теми
+ * же предикатами домена, что и отметка на пункте меню, — иначе меню звало бы
+ * туда, где ничего не ждёт. Отметка прихода заблокирована, пока передача
+ * ключей не подтверждена обеими сторонами.
  */
-export function VisitSchedule() {
+export function VisitSchedule({ focusVisitId }: { focusVisitId?: VisitId }) {
   const { state, now } = useStore();
   const currentDate = today(now);
   const weekEnd = addDays(currentDate, 7);
@@ -39,12 +42,12 @@ export function VisitSchedule() {
     {
       title: "Overdue",
       hint: "The day has passed and the visit isn't closed",
-      items: upcoming.filter((visit) => visit.date < currentDate),
+      items: visits.filter((visit) => isOverdue(visit, now)),
     },
     {
       title: "Awaiting a report",
       hint: "Checked in, report not filed yet",
-      items: visits.filter((visit) => visit.status === "checkedIn"),
+      items: visits.filter(isAwaitingReport),
     },
     { title: "Today", items: upcoming.filter((visit) => visit.date === currentDate) },
     {
@@ -74,7 +77,12 @@ export function VisitSchedule() {
               </Eyebrow>
               <div className="flex flex-col gap-3">
                 {group.items.map((visit) => (
-                  <VisitCard key={visit.id} visit={visit} state={state} />
+                  <VisitCard
+                    key={visit.id}
+                    visit={visit}
+                    state={state}
+                    focused={visit.id === focusVisitId}
+                  />
                 ))}
               </div>
             </div>
@@ -85,9 +93,29 @@ export function VisitSchedule() {
   );
 }
 
-function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
+function VisitCard({
+  visit,
+  state,
+  focused,
+}: {
+  visit: Visit;
+  state: DomainState;
+  focused: boolean;
+}) {
   const { dispatch, now } = useStore();
   const [missedReason, setMissedReason] = useState("");
+  const card = useRef<HTMLDivElement>(null);
+
+  // Рамка сбрасывает прокрутку на новом экране и делает это после эффектов
+  // потомков; кадром позже карточка забирает прокрутку себе. Переход «из
+  // брони в работу» должен закончиться на визите, а не рядом с ним.
+  useEffect(() => {
+    if (!focused) return;
+    const frame = requestAnimationFrame(() => {
+      if (card.current) scrollIntoScreen(card.current);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focused]);
   const booking = state.bookings[visit.bookingId];
   const pet = state.pets[booking.petId];
   const family = state.families[booking.familyId];
@@ -96,7 +124,7 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
   const missed = visit.status === "missed";
 
   return (
-    <Card>
+    <Card ref={card} focused={focused}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-title text-stone-900">

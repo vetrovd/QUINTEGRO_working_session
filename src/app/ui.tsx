@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type { Guard } from "../domain/guards";
 import type { BookingStatus } from "../domain/types";
 import { statusText, statusTone } from "./format";
@@ -45,8 +45,26 @@ export function GuardedButton({
   );
 }
 
-export function Card({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-stone-200 bg-white p-4">{children}</div>;
+export function Card({
+  children,
+  ref,
+  focused = false,
+}: {
+  children: ReactNode;
+  ref?: Ref<HTMLDivElement>;
+  /** Карточка, ради которой сюда пришли по ссылке: её видно среди прочих. */
+  focused?: boolean;
+}) {
+  return (
+    <div
+      ref={ref}
+      className={`rounded-xl border bg-white p-4 ${
+        focused ? "border-stone-400 ring-1 ring-stone-300" : "border-stone-200"
+      }`}
+    >
+      {children}
+    </div>
+  );
 }
 
 /**

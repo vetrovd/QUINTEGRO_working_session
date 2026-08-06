@@ -30,11 +30,16 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
   }
 
   // Развилка, а не шаг пути, — но и её не прячем: недоступное действие видно с
-  // причиной, иначе прототип молчит ровно там, где должен объяснять. Элементы
-  // управления появляются только когда развилка открыта, чтобы раскрытым
-  // оставался ровно один шаг.
+  // причиной, иначе прототип молчит ровно там, где должен объяснять. Когда
+  // развилка открыта, она и выглядит открытой: рисовать доступное действие
+  // цветом «предстоит» значит врать ровно тем цветом, которым прототип
+  // объясняет, что действие недоступно.
   return (
-    <Step title="End care early" state="future" reason={guard.allowed ? undefined : guard.reason}>
+    <Step
+      title="End care early"
+      state={guard.allowed ? "fork" : "future"}
+      reason={guard.allowed ? undefined : guard.reason}
+    >
       {guard.allowed && (
         <>
           <StepNote>

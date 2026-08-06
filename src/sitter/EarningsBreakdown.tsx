@@ -48,9 +48,7 @@ export function EarningsBreakdown({ focusBookingId }: { focusBookingId?: Booking
 
   return (
     <section>
-      <SectionTitle hint="Where the balance came from, booking by booking">
-        Booking by booking
-      </SectionTitle>
+      <SectionTitle hint="Where the balance came from">Booking by booking</SectionTitle>
 
       {rows.length === 0 ? (
         <EmptyState>
@@ -107,7 +105,7 @@ function BookingRow({
   return (
     <div
       ref={card}
-      className={`rounded-lg border bg-white shadow-sm ${
+      className={`rounded-xl border bg-white ${
         focused ? "border-stone-400 ring-1 ring-stone-300" : "border-stone-200"
       }`}
     >
@@ -118,30 +116,30 @@ function BookingRow({
         className="w-full p-4 text-left"
       >
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm font-semibold text-stone-900">
+          <p className="text-body font-semibold text-stone-900">
             {formatDateRange(booking.startDate, booking.endDate)}
           </p>
-          <p className="text-base font-semibold tabular-nums text-stone-900">
+          <p className="text-title tabular-nums text-stone-900">
             {formatMoney(row.total.netMinor)}
           </p>
         </div>
         <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm text-stone-500">
+          <p className="text-meta text-stone-500">
             {pet.name} · {family.name}
           </p>
-          <p className="text-xs text-stone-500">{plural(row.total.count, "visit")}</p>
+          <p className="text-meta text-stone-500">{plural(row.total.count, "visit")}</p>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <PartChips parts={row.parts} />
-          <span className="ml-auto text-xs text-stone-500">
+          <span className="ml-auto text-meta text-stone-500">
             {expanded ? "Hide visits ▲" : "Show visits ▼"}
           </span>
         </div>
       </button>
 
       {lockReason && (
-        <p className="mx-4 mb-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <p className="mx-4 mb-3 rounded-lg bg-amber-50 px-3 py-2.5 text-meta text-amber-900">
           {lockReason}
         </p>
       )}
@@ -157,7 +155,7 @@ function BookingRow({
       {/* Из денег — обратно в работу: ссылка на бронь, чьи это начисления. */}
       <a
         href={routeToHash({ role: "sitter", screen: "booking", bookingId: row.bookingId })}
-        className="block border-t border-stone-100 px-4 py-2.5 text-sm text-stone-500 transition hover:text-stone-900"
+        className="block border-t border-stone-100 px-4 py-3 text-meta text-stone-500 transition hover:bg-stone-50 hover:text-stone-900"
       >
         Open booking <span aria-hidden="true" className="ml-0.5">→</span>
       </a>
@@ -175,7 +173,7 @@ export function PartChips({ parts }: { parts: Balance }) {
       {PARTS.filter((part) => parts[part].count > 0).map((part) => (
         <span
           key={part}
-          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PART_TONES[part]}`}
+          className={`rounded-full px-2.5 py-1 text-meta font-medium ${PART_TONES[part]}`}
         >
           {earningStatusText(part)} {formatMoney(parts[part].netMinor)}
         </span>
@@ -188,16 +186,16 @@ function VisitLine({ earning }: { earning: Earning }) {
   return (
     <li className="flex items-baseline justify-between gap-3 py-2">
       <div>
-        <p className="text-sm text-stone-700">
+        <p className="text-body text-stone-700">
           {formatDate(earning.date)}, {slotName(earning.slot).toLowerCase()}
         </p>
-        <p className="text-xs text-stone-500">{earningStatusText(earning.status)}</p>
+        <p className="text-meta text-stone-500">{earningStatusText(earning.status)}</p>
       </div>
       <div className="text-right">
-        <p className="text-sm font-medium tabular-nums text-stone-900">
+        <p className="text-body font-medium tabular-nums text-stone-900">
           {formatMoney(earning.netMinor)}
         </p>
-        <p className="text-xs tabular-nums text-stone-500">
+        <p className="text-meta tabular-nums text-stone-500">
           {formatMoney(earning.grossMinor)} − {formatMoney(earning.feeMinor)}
         </p>
       </div>

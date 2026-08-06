@@ -77,7 +77,7 @@ export function BookingCalendar() {
 
   return (
     <section>
-      <p className="mb-3 text-sm text-stone-500">
+      <p className="mb-3 text-meta text-stone-500">
         {sitter.name} charges {formatMoney(sitter.ratePerVisitMinor)} a visit · pet: {pet.name}
       </p>
       <Card>
@@ -85,13 +85,13 @@ export function BookingCalendar() {
           <button type="button" onClick={() => setMonth(shiftMonth(month, -1))} className={navClass}>
             ←
           </button>
-          <p className="text-sm font-medium text-stone-900">{monthTitle(month)}</p>
+          <p className="text-title text-stone-900">{monthTitle(month)}</p>
           <button type="button" onClick={() => setMonth(shiftMonth(month, 1))} className={navClass}>
             →
           </button>
         </div>
 
-        <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-stone-400">
+        <div className="mt-4 grid grid-cols-7 gap-1 text-center text-eyebrow text-stone-400 uppercase">
           {WEEKDAYS.map((weekday) => (
             <span key={weekday}>{weekday}</span>
           ))}
@@ -114,11 +114,11 @@ export function BookingCalendar() {
           )}
         </div>
 
-        <fieldset className="mt-4 border-t border-stone-200 pt-4">
-          <legend className="text-sm font-medium text-stone-700">Visits a day</legend>
+        <fieldset className="mt-5 border-t border-stone-200 pt-4">
+          <legend className="text-body font-medium text-stone-700">Visits a day</legend>
           <div className="mt-2 flex flex-wrap gap-3">
             {SLOTS_OF_DAY.map((slot) => (
-              <label key={slot} className="flex items-center gap-2 text-sm">
+              <label key={slot} className="flex items-center gap-2 text-body">
                 <input
                   type="checkbox"
                   checked={slots.includes(slot)}
@@ -135,9 +135,9 @@ export function BookingCalendar() {
 
       {/* Итог закреплён внизу: он пересчитывается на глазах по мере выбора,
           а не открывается в конце отдельным шагом. */}
-      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-0 -mx-5 mt-4 border-t border-stone-200 bg-paper/95 px-5 py-4 backdrop-blur">
         {guard.allowed && start && end && (
-          <p className="text-sm text-stone-600">
+          <p className="text-meta text-stone-600">
             {formatDateRange(start, end)} · {plural(visits, "visit")} ×{" "}
             {formatMoney(sitter.ratePerVisitMinor)} ·{" "}
             <strong className="text-stone-900">{formatMoney(totalMinor)}</strong>
@@ -154,7 +154,7 @@ export function BookingCalendar() {
 }
 
 const navClass =
-  "rounded-md border border-stone-300 px-2 py-1 text-sm text-stone-600 transition hover:bg-stone-50";
+  "rounded-lg border border-stone-300 px-2.5 py-1 text-body text-stone-600 transition hover:bg-stone-50";
 
 function DayCell({
   date,
@@ -185,7 +185,7 @@ function DayCell({
       onClick={onPick}
       disabled={busy || past}
       title={busy ? "Taken by another booking" : past ? "This day has passed" : undefined}
-      className={`rounded-md py-1.5 text-sm transition disabled:cursor-not-allowed ${tone} ${past && !busy ? "text-stone-300" : ""}`}
+      className={`rounded-lg py-2 text-body transition disabled:cursor-not-allowed ${tone} ${past && !busy ? "text-stone-300" : ""}`}
     >
       {parseIsoDate(date).getDate()}
     </button>

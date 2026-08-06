@@ -23,13 +23,13 @@ export function PayoutHistory() {
         {history.map((record) => (
           <Card key={record.id}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="font-semibold text-stone-900">{formatMoney(record.netMinor)}</p>
-              <p className="text-xs text-stone-500">{formatDateTime(record.paidAt)}</p>
+              <p className="text-title tabular-nums text-stone-900">{formatMoney(record.netMinor)}</p>
+              <p className="text-meta text-stone-500">{formatDateTime(record.paidAt)}</p>
             </div>
-            <p className="mt-0.5 text-xs tabular-nums text-stone-500">
+            <p className="mt-1 text-meta tabular-nums text-stone-500">
               {formatMoney(record.grossMinor)} before fees, {formatMoney(record.feeMinor)} fee
             </p>
-            <p className="mt-2 text-sm text-stone-600">
+            <p className="mt-2 text-meta text-stone-600">
               {plural(record.count, "visit")}:{" "}
               {record.items
                 .map(

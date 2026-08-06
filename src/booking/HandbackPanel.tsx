@@ -31,7 +31,7 @@ export function HandbackPanel({
   if (booking.status === "disputed") {
     return (
       <Step title="Handing back the work" state="blocked" last>
-        <div className="rounded-md bg-red-50 px-3 py-2 text-red-900">
+        <div className="rounded-lg bg-red-50 px-3 py-2.5 text-body text-red-900">
           <p>
             <strong>The family disputed the closing</strong>
             {booking.disputedAt && ` ${formatDateTime(booking.disputedAt)}`}: "

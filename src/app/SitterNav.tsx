@@ -42,21 +42,22 @@ export function SitterNav({ route }: { route: Route }) {
         <li key={item.screen} className="flex-1">
           <a
             href={item.href}
-            className={`flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${
-              active === item.screen ? "text-stone-900" : "text-stone-400 hover:text-stone-600"
+            aria-current={active === item.screen ? "page" : undefined}
+            className={`flex flex-col items-center gap-1 py-3 text-meta font-medium transition ${
+              active === item.screen ? "text-accent" : "text-stone-400 hover:text-stone-600"
             }`}
           >
             <span className="flex items-center gap-1.5">
               {item.label}
               {item.badge > 0 && (
-                <span className="rounded-full bg-amber-500 px-1.5 text-[10px] font-semibold text-white">
+                <span className="rounded-full bg-amber-500 px-1.5 text-eyebrow text-white">
                   {item.badge}
                 </span>
               )}
             </span>
             <span
-              className={`h-0.5 w-6 rounded-full ${
-                active === item.screen ? "bg-stone-900" : "bg-transparent"
+              className={`h-0.5 w-7 rounded-full ${
+                active === item.screen ? "bg-accent" : "bg-transparent"
               }`}
             />
           </a>

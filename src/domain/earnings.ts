@@ -115,6 +115,11 @@ export function earningsByBooking(state: DomainState, sitterId: SitterId): Booki
     }));
 }
 
+/** Заработка нет вовсе: ни заблокированного, ни доступного, ни выведенного. */
+export function isEmptyBalance(balance: Balance): boolean {
+  return balance.locked.count + balance.available.count + balance.paidOut.count === 0;
+}
+
 /**
  * Что удерживает деньги этой брони. Правило разблокировки одно (ADR 0001), но
  * ситтеру нужно знать не правило, а свой следующий шаг, — поэтому причина

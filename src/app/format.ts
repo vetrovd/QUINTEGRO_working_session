@@ -32,17 +32,25 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   cancelled: "Canceled",
 };
 
+/**
+ * Тонов ровно столько, сколько состояний различает читатель: ход за кем-то,
+ * работа идёт, всё кончилось, дальше хода нет. Раньше их было шесть семейств
+ * на десять статусов — цвет переставал что-либо значить и начинал спорить с
+ * цветами шагов, по которым и читается, где бронь застряла.
+ */
 const STATUS_TONES: Record<BookingStatus, string> = {
   requested: "bg-amber-100 text-amber-900",
-  confirmed: "bg-sky-100 text-sky-900",
-  readyToStart: "bg-indigo-100 text-indigo-900",
+  confirmed: "bg-stone-100 text-stone-700",
+  readyToStart: "bg-stone-100 text-stone-700",
   inProgress: "bg-emerald-100 text-emerald-900",
+  // Прерванная опека — не ожидание чьего-то хода, а «состоялось, но не так,
+  // как договаривались». Тем же тоном помечен несостоявшийся визит.
   terminatedEarly: "bg-orange-100 text-orange-900",
-  awaitingHandback: "bg-amber-200 text-amber-900",
+  awaitingHandback: "bg-amber-100 text-amber-900",
   completed: "bg-stone-800 text-white",
   disputed: "bg-red-600 text-white",
   declined: "bg-red-100 text-red-900",
-  cancelled: "bg-stone-200 text-stone-600",
+  cancelled: "bg-stone-200 text-stone-500",
 };
 
 const METHOD_LABELS: Record<KeyHandoverMethod, string> = {

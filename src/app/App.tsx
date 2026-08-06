@@ -17,12 +17,12 @@ export function App() {
   const route = useRoute();
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="workbench min-h-screen">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 p-4 lg:flex-row lg:items-start lg:justify-center lg:py-10">
         <PhoneFrame
           header={
             <>
-              <p className="text-sm font-semibold text-stone-900">Pet sitting</p>
+              <p className="text-body font-semibold text-stone-900">Pet sitting</p>
               <RoleSwitcher role={route.role} />
             </>
           }
@@ -32,9 +32,12 @@ export function App() {
           <Screen route={route} />
         </PhoneFrame>
 
-        {/* Панель прототипа живёт за пределами рамки: она не часть продукта. */}
-        <aside className="w-full max-w-md rounded-lg border border-dashed border-stone-400 bg-stone-50 p-4 lg:sticky lg:top-10 lg:w-80">
-          <p className="mb-3 text-xs font-semibold tracking-wide text-stone-500 uppercase">
+        {/* Панель прототипа живёт за пределами рамки и выглядит как приборы, а
+            не как продукт: моноширинный шрифт и пунктир — граница между тем,
+            что мы проверяем, и тем, чем проверяем. */}
+        <aside className="w-full max-w-md border border-dashed border-stone-400/70 bg-white/70 p-4 font-mono lg:sticky lg:top-10 lg:w-80">
+          <p className="mb-3 flex items-center gap-2 text-eyebrow text-stone-500 uppercase">
+            <span className="size-1.5 shrink-0 rounded-full bg-stone-400" aria-hidden="true" />
             Prototype controls
           </p>
           <DebugBar />

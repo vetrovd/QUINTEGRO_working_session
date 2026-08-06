@@ -58,13 +58,13 @@ export function CashOutPanel() {
       </SectionTitle>
 
       <Card>
-        <p className="mb-2 text-sm text-stone-600">
+        <p className="mb-2 text-meta text-stone-600">
           {plural(available.length, "visit")} available. Uncheck any to cash out only part.
         </p>
         <ul className="flex flex-col divide-y divide-stone-100">
           {available.map((earning) => (
             <li key={earning.visitId}>
-              <label className="flex cursor-pointer items-center gap-3 py-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-3 py-2 text-body">
                 <input
                   type="checkbox"
                   checked={!deselected.has(earning.visitId)}
@@ -84,7 +84,7 @@ export function CashOutPanel() {
 
         {/* Три величины до нажатия, а не после: комиссия не должна быть
             новостью в момент, когда деньги уже ушли. */}
-        <dl className="mt-3 flex flex-col gap-1 border-t border-stone-200 pt-3 text-sm">
+        <dl className="mt-3 flex flex-col gap-1.5 border-t border-stone-200 pt-3 text-body">
           <Line label={`Before fees · ${selected.length} of ${available.length} selected`}>
             {formatMoney(total.grossMinor)}
           </Line>
@@ -94,7 +94,7 @@ export function CashOutPanel() {
           </Line>
         </dl>
 
-        <div className="mt-3">
+        <div className="mt-4">
           <GuardedButton
             guard={guard}
             onClick={() => {

@@ -29,16 +29,16 @@ export function PhoneFrame({
   }, [screenKey]);
 
   return (
-    <div className="flex w-full max-w-[400px] flex-col overflow-hidden rounded-[2rem] border-stone-900 bg-white shadow-xl sm:h-[min(820px,calc(100vh-4rem))] sm:border-[10px]">
-      <header className="flex items-center justify-between gap-3 border-b border-stone-200 px-4 py-3">
+    <div className="flex w-full max-w-[400px] flex-col overflow-hidden rounded-[2.25rem] border-stone-900 bg-paper shadow-[0_24px_60px_-24px_rgba(41,32,26,0.45)] sm:h-[min(820px,calc(100vh-4rem))] sm:border-[10px]">
+      <header className="flex items-center justify-between gap-3 border-b border-stone-200/80 bg-white px-5 py-3.5">
         {header}
       </header>
 
-      <main data-screen-body className="flex-1 overflow-y-auto px-4 py-4" ref={body}>
+      <main data-screen-body className="flex-1 overflow-y-auto px-5 py-5" ref={body}>
         {children}
       </main>
 
-      {nav && <nav className="border-t border-stone-200 bg-white">{nav}</nav>}
+      {nav && <nav className="border-t border-stone-200/80 bg-white">{nav}</nav>}
     </div>
   );
 }

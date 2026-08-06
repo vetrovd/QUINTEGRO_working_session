@@ -4,8 +4,8 @@ import { useStore } from "../store/StoreProvider";
 import { formatMoney } from "../domain/money";
 import { bookingTotalMinor } from "../domain/earnings";
 import { routeToHash } from "../app/routes";
-import { formatDateRange, slotsLabel, statusText, statusTone } from "../app/format";
-import { EmptyState, ScreenTitle } from "../app/ui";
+import { formatDateRange, slotsLabel } from "../app/format";
+import { EmptyState, Eyebrow, RowLink, ScreenTitle, StatusChip } from "../app/ui";
 
 /**
  * Список броней ситтера. Входящие запросы первой группой — на них он отвечает
@@ -45,13 +45,13 @@ export function SitterBookingsScreen() {
       {bookings.length === 0 ? (
         <EmptyState>No bookings yet. Requests from families show up here.</EmptyState>
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           {groups.map((group) => (
             <div key={group.title}>
-              <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
+              <Eyebrow>
                 {group.title} · {group.items.length}
-              </p>
-              <div className="flex flex-col gap-2">
+              </Eyebrow>
+              <div className="flex flex-col gap-2.5">
                 {group.items.map((booking) => (
                   <BookingRow key={booking.id} booking={booking} state={state} />
                 ))}
@@ -69,26 +69,19 @@ function BookingRow({ booking, state }: { booking: Booking; state: DomainState }
   const family = state.families[booking.familyId];
 
   return (
-    <a
-      href={routeToHash({ role: "sitter", screen: "booking", bookingId: booking.id })}
-      className="block rounded-lg border border-stone-200 bg-white p-3 transition hover:border-stone-400"
-    >
+    <RowLink href={routeToHash({ role: "sitter", screen: "booking", bookingId: booking.id })}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold text-stone-900">
+        <p className="text-body font-semibold text-stone-900">
           {formatDateRange(booking.startDate, booking.endDate)}
         </p>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(booking.status)}`}
-        >
-          {statusText(booking.status)}
-        </span>
+        <StatusChip status={booking.status} />
       </div>
-      <p className="mt-1 text-sm text-stone-500">
+      <p className="mt-1 text-meta text-stone-500">
         {pet.name} · {family.name}
       </p>
-      <p className="mt-1 text-sm text-stone-500">
-        {slotsLabel(booking.slots)} · {formatMoney(bookingTotalMinor(state, booking.id))}
+      <p className="mt-0.5 text-meta text-stone-500">
+        {slotsLabel(booking.slots)} · <span className="tabular-nums">{formatMoney(bookingTotalMinor(state, booking.id))}</span>
       </p>
-    </a>
+    </RowLink>
   );
 }

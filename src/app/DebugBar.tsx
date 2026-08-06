@@ -12,7 +12,7 @@ export function DebugBar() {
   const [showJournal, setShowJournal] = useState(false);
 
   return (
-    <div className="flex flex-col gap-3 text-xs text-stone-500">
+    <div className="flex flex-col gap-3 text-meta text-stone-500">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span>
           Prototype time: <span className="text-stone-700">{formatDateTime(now)}</span>
@@ -27,7 +27,7 @@ export function DebugBar() {
       </div>
 
       {showJournal && (
-        <ol className="flex flex-col gap-1 rounded-md border border-stone-200 bg-white p-3">
+        <ol className="flex flex-col gap-1 border border-stone-200 bg-white p-3 text-meta">
           {state.journal.length === 0 && <li className="text-stone-400">No events yet.</li>}
           {state.journal.map((entry, index) => (
             <li key={index} className="flex flex-wrap gap-x-2">
@@ -49,7 +49,7 @@ function DebugButton({ onClick, children }: { onClick: () => void; children: Rea
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md border border-stone-300 bg-white px-2.5 py-1 font-medium text-stone-700 transition hover:bg-stone-50"
+      className="border border-stone-300 bg-white px-2.5 py-1 text-meta text-stone-700 transition hover:bg-stone-100"
     >
       {children}
     </button>

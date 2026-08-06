@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   balanceOfSitter,
   bookingTotalMinor,
+  isEmptyBalance,
   earnedTotalMinor,
   earningsByBooking,
   earningsOfBooking,
@@ -118,6 +119,11 @@ describe("баланс", () => {
       "morning",
       "evening",
     ]);
+  });
+
+  it("пустой баланс — это ни одной из трёх частей, а не только нулевая сумма", () => {
+    expect(isEmptyBalance(balanceOfSitter(readyToStart(), SEED_SITTER_ID))).toBe(true);
+    expect(isEmptyBalance(balanceOfSitter(closed(), SEED_SITTER_ID))).toBe(false);
   });
 
   it("выведенного пока нет — вывод появится в тикете 09", () => {

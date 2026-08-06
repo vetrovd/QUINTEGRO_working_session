@@ -12,17 +12,20 @@ export function RoleSwitcher({ role }: { role: Role }) {
   };
 
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-stone-200 p-0.5">
+    // Переключатель ролей — не действие продукта, а способ смотреть на него с
+    // двух сторон, поэтому он остаётся нейтральным: акцент занят главным
+    // действием экрана и активным разделом.
+    <div className="flex items-center gap-0.5 rounded-lg bg-stone-100 p-0.5">
       {(["family", "sitter"] as const).map((item) => (
         // Ссылка, а не кнопка: переключение роли — такой же переход, как
         // любой другой, и должно попадать в историю браузера.
         <a
           key={item}
           href={routeToHash(homeOf(item))}
-          className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+          className={`rounded-[0.3rem] px-2.5 py-1 text-meta font-medium transition ${
             role === item
               ? "bg-white text-stone-900 shadow-sm"
-              : "text-stone-600 hover:text-stone-900"
+              : "text-stone-500 hover:text-stone-900"
           }`}
         >
           {item === "family" ? "Family" : "Sitter"}

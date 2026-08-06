@@ -35,8 +35,8 @@ export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
       </div>
 
       {booking.status === "requested" && (
-        <div className="mt-4 rounded-lg border border-stone-200 bg-white p-4">
-          <p className="rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
+        <div className="mt-4 rounded-xl border border-stone-200 bg-white p-4">
+          <p className="rounded-lg bg-stone-50 px-3 py-2.5 text-meta text-stone-700">
             <span className="font-medium">Care: </span>
             {state.pets[booking.petId].careNotes}
           </p>
@@ -64,14 +64,14 @@ function PayHeader({ booking, state }: { booking: Booking; state: DomainState })
   const lockReason = row && row.parts.locked.count > 0 ? lockReasonOf(state, booking.id) : undefined;
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm text-stone-600">{row ? "Earned so far" : "This booking pays"}</p>
-        <p className="text-lg font-semibold tabular-nums text-stone-900">
+        <p className="text-body text-stone-600">{row ? "Earned so far" : "This booking pays"}</p>
+        <p className="text-figure tabular-nums text-stone-900">
           {formatMoney(row ? row.total.netMinor : plannedNet)}
         </p>
       </div>
-      <p className="mt-0.5 text-xs text-stone-500">
+      <p className="mt-1 text-meta text-stone-500">
         {row
           ? `take-home from ${plural(row.total.count, "filed visit")} · ${formatMoney(plannedNet)} if every visit happens`
           : "take-home if every visit happens · an earning appears with every filed report"}
@@ -84,7 +84,7 @@ function PayHeader({ booking, state }: { booking: Booking; state: DomainState })
       )}
 
       {lockReason && (
-        <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">{lockReason}</p>
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2.5 text-meta text-amber-900">{lockReason}</p>
       )}
 
       {/* Ссылка ведёт на строку брони в разбивке, а строка появляется вместе с
@@ -92,7 +92,7 @@ function PayHeader({ booking, state }: { booking: Booking; state: DomainState })
       {row && (
         <a
           href={routeToHash({ role: "sitter", screen: "earnings", bookingId: booking.id })}
-          className="mt-3 inline-flex text-sm text-stone-500 transition hover:text-stone-900"
+          className="mt-3 inline-flex text-meta text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
         >
           See it in Earnings <span aria-hidden="true" className="ml-0.5">→</span>
         </a>

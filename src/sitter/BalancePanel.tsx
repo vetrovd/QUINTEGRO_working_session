@@ -38,17 +38,17 @@ export function BalancePanel() {
       <Card>
         <ul className="flex flex-col divide-y divide-stone-100">
           {PARTS.map((part) => (
-            <li key={part.status} className="py-3 first:pt-0 last:pb-0">
+            <li key={part.status} className="py-3.5 first:pt-0 last:pb-0">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="flex items-center gap-2 text-sm text-stone-600">
+                <span className="flex items-center gap-2 text-body text-stone-600">
                   <span className={`size-2 rounded-full ${part.dot}`} aria-hidden="true" />
                   {earningStatusText(part.status)}
                 </span>
-                <span className="text-xl font-semibold tabular-nums text-stone-900">
+                <span className="text-figure tabular-nums text-stone-900">
                   {formatMoney(balance[part.status].netMinor)}
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-stone-500">
+              <p className="mt-1 text-meta text-stone-500">
                 <Amounts bucket={balance[part.status]} />
               </p>
               {part.status === "locked" && balance.locked.count > 0 && (
@@ -84,7 +84,7 @@ function LockNotes({ state }: { state: DomainState }) {
       {held.map((row) => {
         const booking = state.bookings[row.bookingId];
         return (
-          <li key={row.bookingId} className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <li key={row.bookingId} className="rounded-lg bg-amber-50 px-3 py-2.5 text-meta text-amber-900">
             <span className="font-medium">
               {formatDateRange(booking.startDate, booking.endDate)} ·{" "}
               {formatMoney(row.parts.locked.netMinor)}

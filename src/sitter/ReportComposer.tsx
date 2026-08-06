@@ -62,21 +62,21 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-stone-200 p-3">
+    <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50/60 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-sm font-semibold text-stone-900">Visit report</h4>
+        <h4 className="text-body font-semibold text-stone-900">Visit report</h4>
         {draft && (
-          <span className="text-xs text-stone-500">
+          <span className="text-meta text-stone-500">
             draft saved {formatDateTime(draft.updatedAt)}
           </span>
         )}
       </div>
 
       <fieldset className="mt-3">
-        <legend className="text-sm font-medium text-stone-700">Done</legend>
+        <legend className="text-body font-medium text-stone-700">Done</legend>
         <div className="mt-2 flex flex-wrap gap-3">
           {pet.careTasks.map((task) => (
-            <label key={task} className="flex items-center gap-2 text-sm">
+            <label key={task} className="flex items-center gap-2 text-body">
               <input
                 type="checkbox"
                 checked={tasks.includes(task)}
@@ -89,7 +89,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
         </div>
       </fieldset>
 
-      <label className="mt-3 flex flex-col gap-1 text-sm">
+      <label className="mt-4 flex flex-col gap-1.5 text-body">
         <span className="font-medium text-stone-700">Note</span>
         <textarea
           value={note}
@@ -101,7 +101,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
       </label>
 
       <div className="mt-3">
-        <p className="text-sm font-medium text-stone-700">Photos</p>
+        <p className="text-body font-medium text-stone-700">Photos</p>
         {photos.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {photos.map((photo, index) => (
@@ -109,12 +109,12 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
                 <img
                   src={photo}
                   alt={`Photo ${index + 1}`}
-                  className="size-20 rounded-md object-cover"
+                  className="size-20 rounded-lg object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => setPhotos(photos.filter((_, item) => item !== index))}
-                  className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-stone-900 text-xs text-white"
+                  className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-stone-900 text-meta text-white"
                   title="Remove photo"
                 >
                   ×
@@ -128,9 +128,9 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
           accept="image/*"
           multiple
           onChange={(event) => void addPhotos(event.target.files)}
-          className="mt-2 block text-sm text-stone-600"
+          className="mt-2 block text-meta text-stone-600"
         />
-        {photoError && <p className="mt-1 text-xs text-red-700">{photoError}</p>}
+        {photoError && <p className="mt-1 text-meta text-red-700">{photoError}</p>}
       </div>
 
       <div className="mt-4 flex flex-wrap items-start gap-3 border-t border-stone-200 pt-3">
@@ -143,7 +143,7 @@ export function ReportComposer({ visit, state }: { visit: Visit; state: DomainSt
         >
           Send report
         </GuardedButton>
-        <p className="text-xs text-stone-500">A sent report can't be changed.</p>
+        <p className="text-meta text-stone-500">A sent report can't be changed.</p>
       </div>
     </div>
   );

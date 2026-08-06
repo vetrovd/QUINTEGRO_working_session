@@ -14,7 +14,7 @@ import {
   slotLabel,
 } from "../app/format";
 import { routeToHash } from "../app/routes";
-import { Card, EmptyState, GuardedButton, SectionTitle, inputClass } from "../app/ui";
+import { Card, EmptyState, Eyebrow, GuardedButton, inputClass } from "../app/ui";
 import { ReportComposer } from "./ReportComposer";
 
 /**
@@ -62,19 +62,16 @@ export function VisitSchedule() {
 
   return (
     <section>
-      <SectionTitle hint="Pet instructions live on the visit card — no digging through messages">
-        Visit schedule
-      </SectionTitle>
       {visits.length === 0 ? (
         <EmptyState>No visits yet. They appear once you accept a booking.</EmptyState>
       ) : (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           {groups.map((group) => (
             <div key={group.title}>
-              <p className="mb-2 text-xs font-medium tracking-wide text-stone-400 uppercase">
+              <Eyebrow>
                 {group.title} · {group.items.length}
                 {group.hint && <span className="ml-2 normal-case">{group.hint}</span>}
-              </p>
+              </Eyebrow>
               <div className="flex flex-col gap-3">
                 {group.items.map((visit) => (
                   <VisitCard key={visit.id} visit={visit} state={state} />
@@ -102,38 +99,38 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold text-stone-900">
+          <p className="text-title text-stone-900">
             {formatDateWithWeekday(visit.date)} · {slotLabel(visit.slot)}
           </p>
-          <p className="text-sm text-stone-500">
+          <p className="mt-0.5 text-meta text-stone-500">
             {pet.name} · {family.name}, {family.address}
           </p>
           {/* Визит принадлежит броне, а условия работы обсуждаются там: из
               карточки должен быть переход, а не поиск по списку. */}
           <a
             href={routeToHash({ role: "sitter", screen: "booking", bookingId: booking.id })}
-            className="mt-1 inline-flex text-sm text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
+            className="mt-1.5 inline-flex text-meta text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
           >
             Booking {formatDateRange(booking.startDate, booking.endDate)}{" "}
             <span aria-hidden="true" className="ml-0.5">→</span>
           </a>
         </div>
         {visit.checkedInAt && (
-          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">
+          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-meta font-medium text-emerald-900">
             On site since {formatTime(visit.checkedInAt)}
           </span>
         )}
       </div>
 
       {!completed && !missed && (
-        <p className="mt-3 rounded-md bg-stone-50 px-3 py-2 text-sm text-stone-700">
+        <p className="mt-3 rounded-lg bg-stone-50 px-3 py-2.5 text-meta text-stone-700">
           <span className="font-medium">Care: </span>
           {pet.careNotes}
         </p>
       )}
 
       {missed && (
-        <p className="mt-3 rounded-md bg-orange-50 px-3 py-2 text-sm text-orange-900">
+        <p className="mt-3 rounded-lg bg-orange-50 px-3 py-2.5 text-meta text-orange-900">
           Visit missed{visit.missedReason && `: “${visit.missedReason}”`}. No earnings from it, and
           the family sees this in their feed.
         </p>
@@ -167,7 +164,7 @@ function VisitCard({ visit, state }: { visit: Visit; state: DomainState }) {
       )}
 
       {completed && report && (
-        <p className="mt-3 text-sm text-stone-600">
+        <p className="mt-3 text-meta text-stone-600">
           Report sent: {report.tasks.map(careTaskLabel).join(", ") || "no tasks"}
           {report.photos.length > 0 && `, ${plural(report.photos.length, "photo")}`}.
           {report.readByFamilyAt ? " The family read it." : " The family hasn't read it yet."}

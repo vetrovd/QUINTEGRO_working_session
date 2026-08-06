@@ -2,7 +2,8 @@ import { countDays } from "../domain/dates";
 import { bookingTotalMinor } from "../domain/earnings";
 import { formatMoney } from "../domain/money";
 import type { Booking, DomainState, Role } from "../domain/types";
-import { formatDateRange, plural, slotsLabel, statusText, statusTone } from "./format";
+import { formatDateRange, plural, slotsLabel } from "./format";
+import { StatusChip } from "./ui";
 
 /**
  * Шапка экрана брони: условия, о которых договорились. Одинакова для обеих
@@ -23,25 +24,21 @@ export function BookingSummary({
   const days = countDays(booking.startDate, booking.endDate);
 
   return (
-    <section className="rounded-lg border border-stone-200 bg-white p-4">
+    <section className="rounded-xl border border-stone-200 bg-white p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-semibold text-stone-900">
+          <p className="text-title text-stone-900">
             {formatDateRange(booking.startDate, booking.endDate)}
           </p>
-          <p className="text-sm text-stone-500">
+          <p className="mt-1 text-meta text-stone-500">
             {plural(days, "day")} · {plural(booking.slots.length, "visit")} a day ·{" "}
             {slotsLabel(booking.slots)}
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(booking.status)}`}
-        >
-          {statusText(booking.status)}
-        </span>
+        <StatusChip status={booking.status} />
       </div>
 
-      <dl className="mt-3 flex flex-col gap-1 border-t border-stone-100 pt-3 text-sm">
+      <dl className="mt-4 flex flex-col gap-1.5 border-t border-stone-100 pt-4 text-meta">
         <Row label="Pet" value={`${pet.name} — ${pet.species}`} />
         {counterpart === "sitter" ? (
           <Row label="Sitter" value={sitter.name} />
@@ -55,7 +52,7 @@ export function BookingSummary({
       </dl>
 
       {booking.declineReason && (
-        <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-900">
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2.5 text-meta text-red-900">
           Reason for declining: {booking.declineReason}
         </p>
       )}

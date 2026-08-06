@@ -78,7 +78,7 @@ export function BookingCalendar() {
   return (
     <section>
       <p className="mb-3 text-meta text-stone-500">
-        {sitter.name} charges {formatMoney(sitter.ratePerVisitMinor)} a visit · pet: {pet.name}
+        {sitter.name} sits for {pet.name}
       </p>
       <Card>
         <div className="flex items-center justify-between">
@@ -133,17 +133,26 @@ export function BookingCalendar() {
 
       </Card>
 
-      {/* Итог закреплён внизу: он пересчитывается на глазах по мере выбора,
-          а не открывается в конце отдельным шагом. */}
+      {/* Итог закреплён внизу и виден всё время выбора: он пересчитывается на
+          глазах, а не открывается в конце отдельным шагом. Поэтому панель
+          показывает и незаконченный выбор — с прочерком вместо суммы, но со
+          ставкой, которая известна всегда. */}
       <div className="sticky bottom-0 -mx-5 mt-4 border-t border-stone-200 bg-paper/95 px-5 py-4 backdrop-blur">
-        {guard.allowed && start && end && (
-          <p className="text-meta text-stone-600">
-            {formatDateRange(start, end)} · {plural(visits, "visit")} ×{" "}
-            {formatMoney(sitter.ratePerVisitMinor)} ·{" "}
-            <strong className="text-stone-900">{formatMoney(totalMinor)}</strong>
-          </p>
-        )}
-        <div className="mt-2 [&>span]:w-full [&_button]:w-full">
+        <div className="flex items-baseline justify-between gap-3 text-meta text-stone-600">
+          <span>
+            {start && end ? formatDateRange(start, end) : "Pick the days you're away"}
+          </span>
+          <span className="shrink-0 tabular-nums">
+            {plural(visits, "visit")} × {formatMoney(sitter.ratePerVisitMinor)}
+          </span>
+        </div>
+        <div className="mt-1 flex items-baseline justify-between gap-3">
+          <span className="text-meta text-stone-500">Total</span>
+          <strong className="text-title tabular-nums text-stone-900">
+            {visits > 0 ? formatMoney(totalMinor) : "—"}
+          </strong>
+        </div>
+        <div className="mt-3 [&>span]:w-full [&_button]:w-full">
           <GuardedButton guard={guard} onClick={submit}>
             Send request
           </GuardedButton>

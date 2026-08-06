@@ -106,13 +106,21 @@ export function earningsByBooking(state: DomainState, sitterId: SitterId): Booki
   return Object.values(state.bookings)
     .filter((booking) => booking.sitterId === sitterId)
     .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
-    .map((booking) => ({ bookingId: booking.id, items: earningsOfBooking(state, booking.id) }))
-    .filter((row) => row.items.length > 0)
-    .map((row) => ({
-      ...row,
-      total: bucketOf(row.items),
-      parts: splitByStatus(row.items),
-    }));
+    .map((booking) => bookingEarnings(state, booking.id))
+    .filter((earnings): earnings is BookingEarnings => earnings !== undefined);
+}
+
+/**
+ * Заработок одной брони. `undefined`, пока по ней нет ни одного начисления:
+ * такой брони нет и в разбивке, а значит вести из неё в деньги некуда.
+ */
+export function bookingEarnings(
+  state: DomainState,
+  bookingId: BookingId,
+): BookingEarnings | undefined {
+  const items = earningsOfBooking(state, bookingId);
+  if (items.length === 0) return undefined;
+  return { bookingId, items, total: bucketOf(items), parts: splitByStatus(items) };
 }
 
 /** Заработка нет вовсе: ни заблокированного, ни доступного, ни выведенного. */

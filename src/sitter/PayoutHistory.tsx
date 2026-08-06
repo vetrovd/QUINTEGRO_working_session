@@ -2,7 +2,7 @@ import { formatMoney } from "../domain/money";
 import { payoutsOfSitter } from "../domain/payouts";
 import { SEED_SITTER_ID } from "../domain/seed";
 import { useStore } from "../store/StoreProvider";
-import { formatDate, formatDateTime, plural, slotName } from "../app/format";
+import { feesText, formatDate, formatDateTime, plural, slotName } from "../app/format";
 import { Card, SectionTitle } from "../app/ui";
 
 /**
@@ -27,7 +27,7 @@ export function PayoutHistory() {
               <p className="text-meta text-stone-500">{formatDateTime(record.paidAt)}</p>
             </div>
             <p className="mt-1 text-meta tabular-nums text-stone-500">
-              {formatMoney(record.grossMinor)} before fees, {formatMoney(record.feeMinor)} fee
+              {feesText(record.grossMinor, record.feeMinor)}
             </p>
             <p className="mt-2 text-meta text-stone-600">
               {plural(record.count, "visit")}:{" "}

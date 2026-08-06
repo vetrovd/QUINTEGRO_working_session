@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { bookingTotalMinor, earningsByBooking, lockReasonOf } from "../domain/earnings";
+import { bookingEarnings, bookingTotalMinor, lockReasonOf } from "../domain/earnings";
 import { canRespondToBooking } from "../domain/guards";
 import { formatMoney, netMinor } from "../domain/money";
 import type { Booking, BookingId, DomainState } from "../domain/types";
@@ -57,29 +57,28 @@ export function SitterBookingScreen({ bookingId }: { bookingId: BookingId }) {
  * ними должна быть переходом, а не памятью ситтера.
  */
 function PayHeader({ booking, state }: { booking: Booking; state: DomainState }) {
-  const row = earningsByBooking(state, booking.sitterId).find(
-    (item) => item.bookingId === booking.id,
-  );
+  const earnings = bookingEarnings(state, booking.id);
   const plannedNet = netMinor(bookingTotalMinor(state, booking.id));
-  const lockReason = row && row.parts.locked.count > 0 ? lockReasonOf(state, booking.id) : undefined;
+  const lockReason =
+    earnings && earnings.parts.locked.count > 0 ? lockReasonOf(state, booking.id) : undefined;
 
   return (
     <section className="rounded-xl border border-stone-200 bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-body text-stone-600">{row ? "Earned so far" : "This booking pays"}</p>
+        <p className="text-body text-stone-600">{earnings ? "Earned so far" : "This booking pays"}</p>
         <p className="text-figure tabular-nums text-stone-900">
-          {formatMoney(row ? row.total.netMinor : plannedNet)}
+          {formatMoney(earnings ? earnings.total.netMinor : plannedNet)}
         </p>
       </div>
       <p className="mt-1 text-meta text-stone-500">
-        {row
-          ? `take-home from ${plural(row.total.count, "filed visit")} · ${formatMoney(plannedNet)} if every visit happens`
+        {earnings
+          ? `take-home from ${plural(earnings.total.count, "filed visit")} · ${formatMoney(plannedNet)} if every visit happens`
           : "take-home if every visit happens · an earning appears with every filed report"}
       </p>
 
-      {row && (
+      {earnings && (
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <PartChips parts={row.parts} />
+          <PartChips parts={earnings.parts} />
         </div>
       )}
 
@@ -89,7 +88,7 @@ function PayHeader({ booking, state }: { booking: Booking; state: DomainState })
 
       {/* Ссылка ведёт на строку брони в разбивке, а строка появляется вместе с
           первым начислением: до него вести некуда, и ссылки нет. */}
-      {row && (
+      {earnings && (
         <a
           href={routeToHash({ role: "sitter", screen: "earnings", bookingId: booking.id })}
           className="mt-3 inline-flex text-meta text-stone-500 underline underline-offset-2 transition hover:text-stone-900"

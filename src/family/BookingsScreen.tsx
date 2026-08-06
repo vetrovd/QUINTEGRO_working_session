@@ -75,7 +75,7 @@ function BookingRow({ booking, state }: { booking: Booking; state: DomainState }
             )}
             {unread > 0 && (
               <span className="rounded-full bg-stone-800 px-2.5 py-1 text-meta font-medium text-white">
-                {plural(unread, "new update")}
+                {plural(unread, "new report")}
               </span>
             )}
           </div>

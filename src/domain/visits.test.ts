@@ -3,14 +3,18 @@ import { addDays } from "./dates";
 import {
   BOOKING_ID,
   CTX,
+  NOW,
   TODAY,
+  TODAY_MORNING,
   bookingRequested,
+  checkedIn,
   confirmed,
+  readyToStart,
   requested,
   run,
 } from "./fixtures";
 import { reduce } from "./reducer";
-import { visitsOfBooking } from "./visits";
+import { isAwaitingReport, isOverdue, visitsOfBooking } from "./visits";
 
 describe("разворачивание периода в визиты", () => {
   it("не создаёт визиты, пока ситтер не принял бронь", () => {
@@ -81,5 +85,27 @@ describe("разворачивание периода в визиты", () => {
         (visit) => visit.status === "cancelled",
       ),
     ).toBe(true);
+  });
+});
+
+/**
+ * По этим двум предикатам считается и отметка на пункте меню, и первые две
+ * группы расписания. Разъедься они — меню звало бы туда, где ничего не ждёт.
+ */
+describe("незакрытые визиты", () => {
+  it("отметка прихода без отчёта — визит ждёт отчёта", () => {
+    expect(isAwaitingReport(checkedIn().visits[TODAY_MORNING])).toBe(true);
+    expect(isAwaitingReport(readyToStart().visits[TODAY_MORNING])).toBe(false);
+  });
+
+  it("запланированный визит становится просроченным, когда его день прошёл", () => {
+    const visit = readyToStart().visits[TODAY_MORNING];
+
+    expect(isOverdue(visit, NOW)).toBe(false);
+    expect(isOverdue(visit, "2026-08-07T09:00:00.000Z")).toBe(true);
+  });
+
+  it("визит с отметкой прихода не считается просроченным — он уже в работе", () => {
+    expect(isOverdue(checkedIn().visits[TODAY_MORNING], "2026-08-07T09:00:00.000Z")).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import { bookingStage } from "../domain/lifecycle";
 import { SEED_SITTER_ID } from "../domain/seed";
 import type { Booking, DomainState } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
@@ -17,26 +18,18 @@ export function SitterBookingsScreen() {
     .filter((booking) => booking.sitterId === SEED_SITTER_ID)
     .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
 
+  // Стадию считает домен: перечислять статусы здесь значило бы держать второй
+  // ответ на вопрос, какая бронь ещё живая, — и терять новый статус молча.
   const groups = [
-    {
-      title: "Incoming requests",
-      items: bookings.filter((booking) => booking.status === "requested"),
-    },
-    {
-      title: "Active",
-      items: bookings.filter((booking) =>
-        ["confirmed", "readyToStart", "inProgress", "terminatedEarly", "awaitingHandback", "disputed"].includes(
-          booking.status,
-        ),
-      ),
-    },
-    {
-      title: "Closed",
-      items: bookings.filter((booking) =>
-        ["completed", "declined", "cancelled"].includes(booking.status),
-      ),
-    },
-  ].filter((group) => group.items.length > 0);
+    { title: "Incoming requests", stage: "incoming" as const },
+    { title: "Active", stage: "live" as const },
+    { title: "Closed", stage: "closed" as const },
+  ]
+    .map((group) => ({
+      ...group,
+      items: bookings.filter((booking) => bookingStage(booking) === group.stage),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <>

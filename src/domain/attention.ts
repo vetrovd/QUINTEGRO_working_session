@@ -1,5 +1,5 @@
-import { today } from "./dates";
 import type { Booking, BookingId, DomainState, IsoDateTime, SitterId } from "./types";
+import { isAwaitingReport, isOverdue } from "./visits";
 
 /**
  * Отметки внимания: «куда мне сейчас». Живут в домене, потому что «чей ход»
@@ -14,7 +14,7 @@ export function awaitsFamilyAction(state: DomainState, bookingId: BookingId): bo
   // Подтверждение закрытия — самый дорогой ход семьи: на нём висят деньги
   // ситтера, и молчание разрешается только таймаутом (ADR 0001).
   if (booking.status === "awaitingHandback") return true;
-  if (!isLive(booking)) return false;
+  if (!acceptsVisitWork(booking)) return false;
 
   if (booking.meetGreet.status === "proposed" && booking.meetGreet.proposedBy === "sitter") {
     return true;
@@ -41,18 +41,19 @@ export function openVisitsCount(
   sitterId: SitterId,
   now: IsoDateTime,
 ): number {
-  const currentDate = today(now);
-
   return Object.values(state.visits).filter((visit) => {
     const booking = state.bookings[visit.bookingId];
-    if (booking.sitterId !== sitterId || !isLive(booking)) return false;
-    if (visit.status === "checkedIn") return true;
-    return visit.status === "scheduled" && visit.date < currentDate;
+    if (booking.sitterId !== sitterId || !acceptsVisitWork(booking)) return false;
+    return isAwaitingReport(visit) || isOverdue(visit, now);
   }).length;
 }
 
-/** Живая бронь — та, по которой ещё возможны действия. */
-function isLive(booking: Booking): boolean {
+/**
+ * Бронь, по которой ситтеру ещё есть что закрывать. Это у́же, чем «не закрытая»
+ * (`bookingStage`): после заявки на сдачу работы визит уже не отметить, и
+ * звать ситтера в расписание не за чем.
+ */
+function acceptsVisitWork(booking: Booking): boolean {
   return (
     booking.status === "confirmed" ||
     booking.status === "readyToStart" ||

@@ -1,6 +1,6 @@
 import { SLOT_TIMES, parseIsoDate } from "../domain/dates";
 import type { EarningStatus } from "../domain/earnings";
-import { LOCALE } from "../domain/money";
+import { LOCALE, formatMoney } from "../domain/money";
 import type {
   BookingStatus,
   CareTask,
@@ -10,7 +10,6 @@ import type {
   KeyHandoverMethod,
   Role,
   SlotOfDay,
-  VisitStatus,
 } from "../domain/types";
 
 const SLOT_LABELS: Record<SlotOfDay, string> = {
@@ -19,6 +18,12 @@ const SLOT_LABELS: Record<SlotOfDay, string> = {
   evening: "Evening",
 };
 
+/**
+ * Метки для плашки статуса. Рядом с ними живёт `statusLabel` из guards.ts — и
+ * это не дубль: там статус попадает в середину фразы отказа («this booking is
+ * awaiting a response»), здесь стоит отдельной плашкой. Слить их — испортить
+ * одно из двух; менять надо оба.
+ */
 const STATUS_LABELS: Record<BookingStatus, string> = {
   requested: "Awaiting response",
   confirmed: "Accepted",
@@ -57,14 +62,6 @@ const METHOD_LABELS: Record<KeyHandoverMethod, string> = {
   inPerson: "In person",
   lockbox: "Lockbox",
   doorCode: "Door code",
-};
-
-const VISIT_LABELS: Record<VisitStatus, string> = {
-  scheduled: "Scheduled",
-  checkedIn: "Sitter on site",
-  completed: "Report filed",
-  missed: "Missed",
-  cancelled: "Canceled",
 };
 
 /** Части баланса называются одинаково везде: иначе они читаются как разные величины. */
@@ -164,10 +161,6 @@ export function methodLabel(method: KeyHandoverMethod): string {
   return METHOD_LABELS[method];
 }
 
-export function visitStatusText(status: VisitStatus): string {
-  return VISIT_LABELS[status];
-}
-
 export function careTaskLabel(task: CareTask): string {
   return CARE_TASK_LABELS[task];
 }
@@ -223,4 +216,9 @@ export function toDateTimeInput(at: IsoDateTime): string {
 
 export function fromDateTimeInput(value: string): IsoDateTime {
   return new Date(value).toISOString();
+}
+
+/** Из чего сложилась сумма: до комиссии и сама комиссия. Формулировка одна на всё. */
+export function feesText(grossMinor: number, feeMinor: number): string {
+  return `${formatMoney(grossMinor)} before fees, ${formatMoney(feeMinor)} fee`;
 }

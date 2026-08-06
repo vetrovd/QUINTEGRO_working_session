@@ -1,9 +1,10 @@
+import { useEffect, useRef } from "react";
 import { canMarkReportRead } from "../domain/guards";
-import { visitTimelineOfBooking } from "../domain/reports";
+import { submittedReportsOfBooking, visitTimelineOfBooking } from "../domain/reports";
 import type { BookingId, DomainState, Role, VisitId } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { careTaskLabel, formatDateTime, formatDateWithWeekday, slotLabel } from "../app/format";
-import { GuardedButton } from "../app/ui";
+import { routeToHash } from "../app/routes";
 
 /**
  * Визиты брони по времени: и состоявшиеся, и пропущенные. Семья читает, но не
@@ -13,6 +14,7 @@ import { GuardedButton } from "../app/ui";
 export function VisitFeed({ bookingId, role }: { bookingId: BookingId; role: Role }) {
   const { state } = useStore();
   const timeline = visitTimelineOfBooking(state, bookingId);
+  useMarkedRead(bookingId, role);
 
   if (timeline.length === 0) {
     return <p className="text-body text-stone-500">No visits reported yet.</p>;
@@ -68,6 +70,32 @@ function ReportPhotos({ photos, petName }: { photos: string[]; petName: string }
   );
 }
 
+/**
+ * Отчёт считается прочитанным, когда семья открыла ленту: прочтение — это
+ * факт просмотра, а не отдельное решение. Кнопка «отметить прочитанным»
+ * заставляла подтверждать то, что уже случилось, и отметка на строке списка
+ * висела, пока по ней не щёлкнут.
+ *
+ * Прочтение не двигает деньги (ADR 0001) — поэтому автоматическая отметка
+ * ничего не разблокирует и ничем не рискует.
+ */
+function useMarkedRead(bookingId: BookingId, role: Role) {
+  const { state, dispatch } = useStore();
+  // Событие отправляется по одному разу на визит: без этого второй прогон
+  // эффекта в StrictMode получил бы отказ guard'а и засорил журнал.
+  const marked = useRef(new Set<VisitId>());
+
+  useEffect(() => {
+    if (role !== "family") return;
+    for (const item of submittedReportsOfBooking(state, bookingId)) {
+      if (item.report.readByFamilyAt || marked.current.has(item.visit.id)) continue;
+      if (!canMarkReportRead(state, item.visit.id).allowed) continue;
+      marked.current.add(item.visit.id);
+      dispatch({ type: "VisitReportRead", visitId: item.visit.id });
+    }
+  }, [state, bookingId, role, dispatch]);
+}
+
 function EntryHead({ title, note, badge }: { title: string; note: string; badge?: string }) {
   return (
     <div className="flex items-start justify-between gap-2">
@@ -111,7 +139,6 @@ function ReportEntry({
   visitId: VisitId;
   role: Role;
 }) {
-  const { dispatch } = useStore();
   const visit = state.visits[visitId];
   const report = state.reports[visitId];
   const pet = state.pets[state.bookings[visit.bookingId].petId];
@@ -149,22 +176,21 @@ function ReportEntry({
 
         {report.note.trim() && <p className="mt-3 text-body text-stone-700">{report.note}</p>}
 
-        {role === "family" && (
-          <div className="mt-3">
-            {unread ? (
-              <GuardedButton
-                tone="neutral"
-                guard={canMarkReportRead(state, visitId)}
-                onClick={() => dispatch({ type: "VisitReportRead", visitId })}
-              >
-                Mark as read
-              </GuardedButton>
-            ) : (
-              <p className="text-meta text-stone-400">
-                Read {report.readByFamilyAt && formatDateTime(report.readByFamilyAt)}
-              </p>
-            )}
-          </div>
+        {role === "family" && report.readByFamilyAt && (
+          <p className="mt-3 text-meta text-stone-400">
+            Read {formatDateTime(report.readByFamilyAt)}
+          </p>
+        )}
+
+        {/* Визит принадлежит расписанию: здесь он запись, а действия над ним —
+            там. Переход ведёт на его карточку, а не просто в раздел. */}
+        {role === "sitter" && (
+          <a
+            href={routeToHash({ role: "sitter", screen: "schedule", visitId })}
+            className="mt-3 inline-flex text-meta text-stone-500 underline underline-offset-2 transition hover:text-stone-900"
+          >
+            Open in Schedule <span aria-hidden="true" className="ml-0.5">→</span>
+          </a>
         )}
       </div>
     </li>

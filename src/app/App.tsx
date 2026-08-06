@@ -65,7 +65,7 @@ function Screen({ route }: { route: Route }) {
     case "booking":
       return <SitterBookingScreen bookingId={route.bookingId} />;
     case "schedule":
-      return <ScheduleScreen />;
+      return <ScheduleScreen focusVisitId={route.visitId} />;
     case "earnings":
       return <EarningsScreen focusBookingId={route.bookingId} />;
   }

@@ -13,13 +13,12 @@ import {
   closed,
   completeVisit,
   readyToStart,
+  RATE,
 } from "./fixtures";
 import { PLATFORM_FEE_RATE, feeMinor, netMinor } from "./money";
 import { reduce } from "./reducer";
 import { SEED_SITTER_ID } from "./seed";
 import { visitId } from "./visits";
-
-const RATE = 2_000;
 
 describe("возникновение начислений", () => {
   it("начислений нет, пока визиты не завершены", () => {
@@ -31,15 +30,23 @@ describe("возникновение начислений", () => {
   });
 
   it("на один завершённый визит приходится ровно одно начисление", () => {
-    const state = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const state = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
     const earnings = earningsOfBooking(state, BOOKING_ID);
 
     expect(earnings).toHaveLength(1);
-    expect(earnings[0]).toMatchObject({ visitId: visitId(BOOKING_ID, TODAY, "morning") });
+    expect(earnings[0]).toMatchObject({
+      visitId: visitId(BOOKING_ID, TODAY, "morning"),
+    });
   });
 
   it("два завершённых визита дают два начисления", () => {
-    const first = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const first = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
     const state = completeVisit(first, visitId(BOOKING_ID, TODAY, "evening"));
 
     expect(earningsOfBooking(state, BOOKING_ID)).toHaveLength(2);
@@ -48,7 +55,10 @@ describe("возникновение начислений", () => {
 
 describe("комиссия платформы", () => {
   it("делит сумму визита на комиссию и выплату на руки", () => {
-    const state = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const state = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
     const [earning] = earningsOfBooking(state, BOOKING_ID);
 
     expect(earning.grossMinor).toBe(RATE);
@@ -65,7 +75,10 @@ describe("комиссия платформы", () => {
 
 describe("баланс", () => {
   it("у незакрытой брони всё заблокировано, доступного нет", () => {
-    const state = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const state = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
     const balance = balanceOfSitter(state, SEED_SITTER_ID);
 
     expect(balance.locked.count).toBe(1);
@@ -83,16 +96,25 @@ describe("баланс", () => {
   });
 
   it("суммы частей складываются из отдельных визитов", () => {
-    const first = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const first = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
     const state = completeVisit(first, visitId(BOOKING_ID, TODAY, "evening"));
     const balance = balanceOfSitter(state, SEED_SITTER_ID);
 
     expect(balance.locked.grossMinor).toBe(2 * RATE);
-    expect(balance.locked.items.map((item) => item.slot)).toEqual(["morning", "evening"]);
+    expect(balance.locked.items.map((item) => item.slot)).toEqual([
+      "morning",
+      "evening",
+    ]);
   });
 
   it("выведенного пока нет — вывод появится в тикете 09", () => {
-    const state = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const state = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
 
     expect(balanceOfSitter(state, SEED_SITTER_ID).paidOut.count).toBe(0);
   });
@@ -100,14 +122,21 @@ describe("баланс", () => {
 
 describe("начислено против плана", () => {
   it("план считается по всем визитам, начислено — только по завершённым", () => {
-    const state = completeVisit(readyToStart(), visitId(BOOKING_ID, TODAY, "morning"));
+    const state = completeVisit(
+      readyToStart(),
+      visitId(BOOKING_ID, TODAY, "morning"),
+    );
 
     expect(plannedTotalMinor(state, BOOKING_ID)).toBe(10 * RATE);
     expect(earnedTotalMinor(state, BOOKING_ID)).toBe(RATE);
   });
 
   it("отменённые визиты выпадают из плана", () => {
-    const cancelled = reduce(checkedIn(), { type: "BookingCancelled", bookingId: BOOKING_ID }, CTX);
+    const cancelled = reduce(
+      checkedIn(),
+      { type: "BookingCancelled", bookingId: BOOKING_ID },
+      CTX,
+    );
 
     // Опека уже началась — отмена брони отклонена, план не изменился.
     expect(plannedTotalMinor(cancelled, BOOKING_ID)).toBe(10 * RATE);

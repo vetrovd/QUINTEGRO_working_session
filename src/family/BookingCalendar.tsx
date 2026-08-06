@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, countDays, eachDate, parseIsoDate, toIsoDate, today } from "../domain/dates";
+import { quoteTotalMinor } from "../domain/earnings";
 import { LOCALE, formatMoney } from "../domain/money";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "../domain/seed";
 import { SLOTS_OF_DAY } from "../domain/types";
@@ -30,7 +31,7 @@ export function BookingCalendar() {
 
   const days = start && end ? countDays(start, end) : 0;
   const visits = days * slots.length;
-  const totalMinor = visits * sitter.ratePerVisitMinor;
+  const totalMinor = quoteTotalMinor(sitter.ratePerVisitMinor, visits);
   const overlaps =
     start && end ? eachDate(start, end).some((date) => busyDates.has(date)) : false;
   const canSubmit = Boolean(start && end && slots.length > 0 && !overlaps);

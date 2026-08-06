@@ -101,12 +101,20 @@ export function earnedTotalMinor(state: DomainState, bookingId: BookingId): numb
   );
 }
 
+/**
+ * Стоимость набора визитов по ставке. Живёт в домене, потому что нужна и до
+ * появления брони — семье, которая ещё только выбирает период.
+ */
+export function quoteTotalMinor(ratePerVisitMinor: number, visitCount: number): number {
+  return visitCount * ratePerVisitMinor;
+}
+
 /** Сумма по плану: все визиты брони, кроме отменённых. */
 export function plannedTotalMinor(state: DomainState, bookingId: BookingId): number {
   const booking = state.bookings[bookingId];
   if (!booking) return 0;
   const visits = visitsOfBooking(state, bookingId).filter((visit) => visit.status !== "cancelled");
-  return visits.length * booking.ratePerVisitMinor;
+  return quoteTotalMinor(booking.ratePerVisitMinor, visits.length);
 }
 
 /**

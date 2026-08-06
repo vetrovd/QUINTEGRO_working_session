@@ -52,7 +52,9 @@ export function reduce(state: DomainState, event: DomainEvent, ctx: ReduceContex
         return reject(state, event, ctx, "A booking with this id already exists");
       }
       // Ставку публикует ситтер: бронь замораживает его цену в момент запроса,
-      // и позже она уже не переоценивается (ADR 0003).
+      // и позже она уже не переоценивается (ADR 0003). Ситтера проверяем
+      // потому, что разыменовываем: семью и питомца редьюсер только сравнивает
+      // по идентификатору, падать на них не на чем.
       const sitter = state.sitters[event.sitterId];
       if (!sitter) return reject(state, event, ctx, "Sitter not found");
       const booking: Booking = {

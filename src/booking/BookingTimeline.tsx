@@ -1,4 +1,6 @@
-import { meetGreetSettled } from "../domain/guards";
+import { canStartCare } from "../domain/guards";
+import { timelineOf } from "../domain/timeline";
+import type { StepPhase } from "../domain/timeline";
 import { visitsOfBooking } from "../domain/visits";
 import type { Booking, Role } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
@@ -15,62 +17,37 @@ import { VisitFeed } from "./VisitFeed";
  * сейчас в работе; пройденные свёрнуты в строку-запись, будущие остаются
  * видимыми с причиной блокировки.
  *
+ * Где именно находится бронь, считает домен (`timelineOf`): порядок шагов —
+ * это модель пути, а не оформление. Здесь остаётся только отрисовка.
+ *
  * Свернуть можно, скрыть нельзя: если убрать будущие шаги с экрана, прототип
  * перестанет показывать единственное, ради чего его строили, — что действие
  * недоступно и почему.
  */
 export function BookingTimeline({ booking, role }: { booking: Booking; role: Role }) {
   const { state } = useStore();
-
-  const visits = visitsOfBooking(state, booking.id);
-  const openVisits = visits.filter(
-    (visit) => visit.status === "scheduled" || visit.status === "checkedIn",
-  ).length;
-  const settled =
-    booking.status === "requested" ||
-    booking.status === "declined" ||
-    booking.status === "cancelled";
-
-  const done = {
-    meetGreet: meetGreetSettled(booking),
-    keysOut: booking.keys.handover.status === "done",
-    // Опека закончилась, когда визиты были и ни одного незакрытого не осталось:
-    // досрочное прерывание снимает оставшиеся, и путь идёт дальше тем же
-    // порядком. До принятия брони визитов ещё нет — это не «всё сделано».
-    care: !settled && visits.length > 0 && openVisits === 0,
-    keysBack: booking.keys.return.status === "done",
-    handback: booking.status === "completed" || booking.status === "disputed",
-  };
-
-  const order = ["meetGreet", "keysOut", "care", "keysBack", "handback"] as const;
-  const current = settled ? undefined : order.find((step) => !done[step]);
+  const steps = timelineOf(state, booking.id);
 
   return (
     <ol className="flex flex-col">
       <RequestStep booking={booking} />
 
-      <MeetGreetPanel booking={booking} role={role} expanded={current === "meetGreet"} />
+      <MeetGreetPanel booking={booking} role={role} expanded={steps.meetGreet === "current"} />
       <KeyHandoverPanel
         booking={booking}
         role={role}
         direction="handover"
-        expanded={current === "keysOut"}
+        expanded={steps.keyHandover === "current"}
       />
-      <CareStep
-        booking={booking}
-        role={role}
-        expanded={current === "care"}
-        done={done.care}
-        started={visits.some((visit) => visit.status !== "scheduled")}
-      />
+      <CareStep booking={booking} role={role} phase={steps.care} />
       <TerminatePanel booking={booking} role={role} />
       <KeyHandoverPanel
         booking={booking}
         role={role}
         direction="return"
-        expanded={current === "keysBack"}
+        expanded={steps.keyReturn === "current"}
       />
-      <HandbackPanel booking={booking} role={role} expanded={current === "handback"} />
+      <HandbackPanel booking={booking} role={role} expanded={steps.handback === "current"} />
     </ol>
   );
 }
@@ -112,21 +89,23 @@ function RequestStep({ booking }: { booking: Booking }) {
 function CareStep({
   booking,
   role,
-  expanded,
-  done,
-  started,
+  phase,
 }: {
   booking: Booking;
   role: Role;
-  expanded: boolean;
-  done: boolean;
-  started: boolean;
+  phase: StepPhase;
 }) {
+  const { state } = useStore();
+  // Причина ожидания приходит из того же guard'а, что и запрет: сочинять её
+  // здесь значило бы держать второй источник правды о готовности брони.
+  const guard = canStartCare(state, booking.id);
+  const started = visitsOfBooking(state, booking.id).some((visit) => visit.status !== "scheduled");
+
   return (
     <Step
       title="Visits"
-      state={done ? "done" : expanded ? "current" : "future"}
-      reason={started ? undefined : "Starts once the keys are handed over."}
+      state={phase === "deadEnd" ? "blocked" : phase}
+      reason={guard.allowed ? undefined : guard.reason}
     >
       {started && (
         <>

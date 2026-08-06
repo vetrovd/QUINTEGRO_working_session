@@ -14,6 +14,16 @@ export type Role = "family" | "sitter";
 export const SLOTS_OF_DAY = ["morning", "midday", "evening"] as const;
 export type SlotOfDay = (typeof SLOTS_OF_DAY)[number];
 
+/**
+ * Заявка на бронь, пока её ещё собирают: даты могут быть не выбраны. Отдельный
+ * тип нужен, чтобы guard проверял её до того, как появится событие.
+ */
+export interface BookingDraft {
+  startDate: IsoDate | null;
+  endDate: IsoDate | null;
+  slots: readonly SlotOfDay[];
+}
+
 export interface Family {
   id: FamilyId;
   name: string;

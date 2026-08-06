@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { addDays, countDays, eachDate, parseIsoDate, toIsoDate, today } from "../domain/dates";
+import { busyDates } from "../domain/availability";
+import { addDays, countDays, parseIsoDate, toIsoDate, today } from "../domain/dates";
 import { quoteTotalMinor } from "../domain/earnings";
+import { canRequestBooking } from "../domain/guards";
 import { LOCALE, formatMoney } from "../domain/money";
 import { SEED_FAMILY_ID, SEED_PET_ID, SEED_SITTER_ID } from "../domain/seed";
 import { SLOTS_OF_DAY } from "../domain/types";
 import type { IsoDate, SlotOfDay } from "../domain/types";
 import { useStore } from "../store/StoreProvider";
 import { formatDateRange, plural, slotLabel } from "../app/format";
-import { Card } from "../app/ui";
+import { Card, GuardedButton } from "../app/ui";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -27,24 +29,14 @@ export function BookingCalendar() {
   const [end, setEnd] = useState<IsoDate | null>(addDays(currentDate, 4));
   const [slots, setSlots] = useState<SlotOfDay[]>(["morning", "evening"]);
 
-  const busyDates = useMemo(() => busyDatesOf(state), [state]);
+  const busy = useMemo(() => busyDates(state), [state]);
 
   const days = start && end ? countDays(start, end) : 0;
   const visits = days * slots.length;
   const totalMinor = quoteTotalMinor(sitter.ratePerVisitMinor, visits);
-  const overlaps =
-    start && end ? eachDate(start, end).some((date) => busyDates.has(date)) : false;
-  // Причина, а не просто «нельзя»: отправка блокируется с объяснением, как и
-  // любое другое недоступное действие в прототипе.
-  const blocked = !start
-    ? "Pick the first day of the stay"
-    : !end
-      ? "Pick the last day of the stay"
-      : overlaps
-        ? "Some days in this range are already booked"
-        : slots.length === 0
-          ? "Pick at least one visit a day"
-          : null;
+  // Отправку разрешает домен, а не форма: причина отказа приходит из guard'а
+  // тем же путём, что и у любого другого действия в прототипе.
+  const guard = canRequestBooking(state, { startDate: start, endDate: end, slots });
 
   function pickDate(date: IsoDate) {
     if (!start || (start && end)) {
@@ -112,7 +104,7 @@ export function BookingCalendar() {
               <DayCell
                 key={date}
                 date={date}
-                busy={busyDates.has(date)}
+                busy={busy.has(date)}
                 selected={isSelected(date, start, end)}
                 edge={date === start || date === end}
                 past={date < currentDate}
@@ -144,23 +136,18 @@ export function BookingCalendar() {
       {/* Итог закреплён внизу: он пересчитывается на глазах по мере выбора,
           а не открывается в конце отдельным шагом. */}
       <div className="sticky bottom-0 -mx-4 mt-4 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur">
-        {blocked ? (
-          <p className="text-sm text-stone-500">{blocked}</p>
-        ) : (
+        {guard.allowed && start && end && (
           <p className="text-sm text-stone-600">
-            {formatDateRange(start!, end!)} · {plural(visits, "visit")} ×{" "}
+            {formatDateRange(start, end)} · {plural(visits, "visit")} ×{" "}
             {formatMoney(sitter.ratePerVisitMinor)} ·{" "}
             <strong className="text-stone-900">{formatMoney(totalMinor)}</strong>
           </p>
         )}
-        <button
-          type="button"
-          disabled={Boolean(blocked)}
-          onClick={submit}
-          className="mt-2 w-full rounded-md bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
-        >
-          Send request
-        </button>
+        <div className="mt-2 [&>span]:w-full [&_button]:w-full">
+          <GuardedButton guard={guard} onClick={submit}>
+            Send request
+          </GuardedButton>
+        </div>
       </div>
     </section>
   );
@@ -209,16 +196,6 @@ function isSelected(date: IsoDate, start: IsoDate | null, end: IsoDate | null): 
   if (!start) return false;
   if (!end) return date === start;
   return date >= start && date <= end;
-}
-
-/** Занятыми считаются дни живых броней — отклонённые и отменённые не мешают. */
-function busyDatesOf(state: ReturnType<typeof useStore>["state"]): Set<IsoDate> {
-  const busy = new Set<IsoDate>();
-  for (const booking of Object.values(state.bookings)) {
-    if (booking.status === "declined" || booking.status === "cancelled") continue;
-    for (const date of eachDate(booking.startDate, booking.endDate)) busy.add(date);
-  }
-  return busy;
 }
 
 function startOfMonth(date: IsoDate): IsoDate {

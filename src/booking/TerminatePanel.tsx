@@ -17,9 +17,6 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
   const terminated = booking.status === "terminatedEarly";
   const guard = canTerminateEarly(state, booking.id);
 
-  // Не шаг пути, а развилка: показывается только когда ей есть место.
-  if (!terminated && !guard.allowed) return null;
-
   if (terminated) {
     return (
       <Step
@@ -32,35 +29,43 @@ export function TerminatePanel({ booking, role }: { booking: Booking; role: Role
     );
   }
 
+  // Развилка, а не шаг пути, — но и её не прячем: недоступное действие видно с
+  // причиной, иначе прототип молчит ровно там, где должен объяснять. Элементы
+  // управления появляются только когда развилка открыта, чтобы раскрытым
+  // оставался ровно один шаг.
   return (
-    <Step title="End care early" state="future">
-      <StepNote>
-        If care stops before the end date, the remaining visits are dropped and only the ones that
-        happened are paid for. The booking still has to be closed afterwards.
-      </StepNote>
-      <div className="flex flex-col items-start gap-3">
-        <input
-          type="text"
-          value={reason}
-          placeholder="Reason (optional)"
-          onChange={(event) => setReason(event.target.value)}
-          className={`${inputClass} w-full`}
-        />
-        <GuardedButton
-          tone="danger"
-          guard={guard}
-          onClick={() =>
-            dispatch({
-              type: "BookingTerminatedEarly",
-              bookingId: booking.id,
-              by: role,
-              reason: reason.trim() || undefined,
-            })
-          }
-        >
-          End care early
-        </GuardedButton>
-      </div>
+    <Step title="End care early" state="future" reason={guard.allowed ? undefined : guard.reason}>
+      {guard.allowed && (
+        <>
+          <StepNote>
+            If care stops before the end date, the remaining visits are dropped and only the ones
+            that happened are paid for. The booking still has to be closed afterwards.
+          </StepNote>
+          <div className="flex flex-col items-start gap-3">
+            <input
+              type="text"
+              value={reason}
+              placeholder="Reason (optional)"
+              onChange={(event) => setReason(event.target.value)}
+              className={`${inputClass} w-full`}
+            />
+            <GuardedButton
+              tone="danger"
+              guard={guard}
+              onClick={() =>
+                dispatch({
+                  type: "BookingTerminatedEarly",
+                  bookingId: booking.id,
+                  by: role,
+                  reason: reason.trim() || undefined,
+                })
+              }
+            >
+              End care early
+            </GuardedButton>
+          </div>
+        </>
+      )}
     </Step>
   );
 }

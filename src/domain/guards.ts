@@ -1,9 +1,11 @@
-import { today } from "./dates";
+import { busyDates } from "./availability";
+import { eachDate, today } from "./dates";
 import { earningOfVisit } from "./earnings";
 import { handbackTimeLeftMs } from "./handback";
 import { isReportEmpty } from "./reports";
 import type {
   Booking,
+  BookingDraft,
   BookingId,
   BookingStatus,
   DomainState,
@@ -47,6 +49,23 @@ export function statusLabel(status: BookingStatus): string {
     case "cancelled":
       return "canceled";
   }
+}
+
+/**
+ * Заявка на бронь до того, как она стала событием. Проверка живёт в домене по
+ * тому же правилу, что и остальные: активность кнопки — это guard, иначе
+ * условия отправки расходятся с тем, что принимает редьюсер.
+ */
+export function canRequestBooking(state: DomainState, draft: BookingDraft): Guard {
+  if (!draft.startDate) return deny("Pick the first day of the stay");
+  if (!draft.endDate) return deny("Pick the last day of the stay");
+
+  const busy = busyDates(state);
+  if (eachDate(draft.startDate, draft.endDate).some((date) => busy.has(date))) {
+    return deny("Some days in this range are already booked");
+  }
+  if (draft.slots.length === 0) return deny("Pick at least one visit a day");
+  return allow;
 }
 
 export function canRespondToBooking(state: DomainState, bookingId: BookingId): Guard {
@@ -208,6 +227,31 @@ export function missingReadinessSteps(booking: Booking): string[] {
   if (!meetGreetSettled(booking)) missing.push("the meet & greet");
   if (booking.keys.handover.status !== "done") missing.push("the key handoff");
   return missing;
+}
+
+/**
+ * Началась ли опека. Условия те же, что у canCheckIn для отдельного визита,
+ * но заданы на уровне брони: таймлайну нужна одна причина ожидания на весь
+ * шаг, и она должна прийти из домена, а не быть сочинена интерфейсом.
+ */
+export function canStartCare(state: DomainState, bookingId: BookingId): Guard {
+  const booking = state.bookings[bookingId];
+  if (!booking) return deny("Booking not found");
+  if (booking.status === "requested") {
+    return deny("The sitter hasn't accepted the request yet");
+  }
+  if (booking.status === "declined") return deny("The sitter declined this request");
+  if (booking.status === "cancelled") return deny("This booking is canceled");
+
+  const missing = missingReadinessSteps(booking);
+  if (missing.length > 0) return deny(`Starts after ${andList(missing)}`);
+  return allow;
+}
+
+/** «a», «a and b», «a, b and c» — причина отказа должна читаться как фраза. */
+function andList(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
 export function canCheckIn(state: DomainState, visitId: VisitId, now: IsoDateTime): Guard {
